@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💣 3D Minesweeper Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 100%);
+            color: white;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .ui-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 100;
+            pointer-events: none;
+        }
+
+        .game-hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            pointer-events: auto;
+        }
+
+        .hud-section {
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 15px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 80px;
+        }
+
+        .stat-icon {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: white;
+            pointer-events: auto;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-primary { background: linear-gradient(45deg, #007bff, #0056b3); }
+        .btn-success { background: linear-gradient(45deg, #28a745, #1e7e34); }
+        .btn-danger { background: linear-gradient(45deg, #dc3545, #a71e2a); }
+        .btn-warning { background: linear-gradient(45deg, #ffc107, #d39e00); }
+        .btn-secondary { background: linear-gradient(45deg, #6c757d, #495057); }
+
+        .difficulty-selector {
+            position: absolute;
+            top: 100px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            pointer-events: auto;
+        }
+
+        .difficulty-btn {
+            padding: 8px 16px;
+            font-size: 12px;
+            min-width: 120px;
+        }
+
+        .difficulty-btn.active {
+            background: linear-gradient(45deg, #28a745, #1e7e34);
+        }
+
+        .game-info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 15px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+            font-size: 12px;
+            color: #ccc;
+            pointer-events: auto;
+        }
+
+        .camera-controls {
+            position: absolute;
+            right: 20px;
+            top: 100px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: auto;
+        }
+
+        .camera-btn {
+            padding: 8px 12px;
+            font-size: 12px;
+            min-width: 80px;
+        }
+
+        #gameCanvas {
+            width: 100%;
+            height: 100vh;
+            display: block;
+            cursor: crosshair;
+        }
+
+        .game-over-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            pointer-events: auto;
+        }
+
+        .game-over-content {
+            background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 400px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .game-over-title {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .instructions {
+            position: absolute;
+            top: 50%;
+            left: 20px;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            max-width: 300px;
+            font-size: 12px;
+            line-height: 1.6;
+            pointer-events: auto;
+        }
+
+        .instructions h3 {
+            margin-bottom: 10px;
+            color: #ffc107;
+        }
+
+        .instructions ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .instructions li {
+            margin: 5px 0;
+            padding-left: 15px;
+            position: relative;
+        }
+
+        .instructions li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: #007bff;
+        }
+
+        @media (max-width: 768px) {
+            .game-hud {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .instructions {
+                display: none;
+            }
+            
+            .camera-controls {
+                flex-direction: row;
+                right: 10px;
+                bottom: 100px;
+                top: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    
+    <div class="ui-overlay">
+        <div class="game-hud">
+            <div class="hud-section">
+                <div class="stat">
+                    <div class="stat-icon">💣</div>
+                    <div class="stat-value" id="mineCount">480</div>
+                </div>
+            </div>
+
+            <div class="hud-section">
+                <div class="controls">
+                    <button class="btn-primary" onclick="resetGame()">🔄 Restart</button>
+                    <button class="btn-warning" id="flagModeBtn" onclick="toggleFlagMode()">🚩 Flag Mode</button>
+                    <button class="btn-success" onclick="toggleFullscreen()">⛶ Fullscreen</button>
+                </div>
+            </div>
+
+            <div class="hud-section">
+                <div class="stat">
+                    <div class="stat-icon">⏰</div>
+                    <div class="stat-value" id="timer">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="difficulty-selector">
+            <button class="difficulty-btn btn-secondary" data-difficulty="beginner">Beginner<br>9×9×9</button>
+            <button class="difficulty-btn btn-secondary" data-difficulty="intermediate">Intermediate<br>16×16×16</button>
+            <button class="difficulty-btn btn-secondary active" data-difficulty="expert">Expert<br>48×48×1</button>
+        </div>
+
+        <div class="camera-controls">
+            <button class="camera-btn btn-secondary" onclick="resetCamera()">📷 Reset View</button>
+            <button class="camera-btn btn-secondary" onclick="toggleAutoRotate()">🔄 Auto Rotate</button>
+            <button class="camera-btn btn-secondary" onclick="switchView()">👁️ Switch View</button>
+        </div>
+
+        <div class="instructions">
+            <h3>3D Controls</h3>
+            <ul>
+                <li>Mouse: Rotate camera</li>
+                <li>Scroll: Zoom in/out</li>
+                <li>Click: Reveal/Flag cell</li>
+                <li>Right-click: Quick flag</li>
+                <li>WASD: Move camera</li>
+                <li>Space: Toggle flag mode</li>
+            </ul>
+            <h3>Game Rules</h3>
+            <ul>
+                <li>Clear all non-mine cells</li>
+                <li>Numbers show adjacent mines</li>
+                <li>Flag suspected mines</li>
+                <li>First click is always safe</li>
+            </ul>
+        </div>
+
+        <div class="game-info">
+            <span id="gameMode">Click to Reveal</span>
+            <span id="coordinates">Position: 0, 0, 0</span>
+            <div id="gameStatus" class="status-indicator">Playing</div>
+        </div>
+    </div>
+
+    <div class="game-over-overlay" id="gameOverOverlay">
+        <div class="game-over-content">
+            <div class="game-over-title" id="gameOverTitle">🎉</div>
+            <div class="game-over-message" id="gameOverMessage">Congratulations!</div>
+            <div class="controls">
+                <button class="btn-primary" onclick="resetGame(); hideGameOver()">New Game</button>
+                <button class="btn-secondary" onclick="hideGameOver()">Continue</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        class Minesweeper3D {
+            constructor() {
+                this.difficulties = {
+                    beginner: { x: 9, y: 9, z: 9, mines: 80 },
+                    intermediate: { x: 16, y: 16, z: 16, mines: 400 },
+                    expert: { x: 48, y: 48, z: 1, mines: 480 }
+                };
+                
+                this.currentDifficulty = 'expert';
+                this.grid = [];
+                this.gameState = 'playing';
+                this.flagMode = false;
+                this.firstClick = true;
+                this.timer = 0;
+                this.timerInterval = null;
+                this.mineCount = 0;
+                this.autoRotate = false;
+                
+                this.initThree();
+                this.initializeGame();
+                this.setupEventListeners();
+                this.animate();
+            }
+
+            initThree() {
+                // Scene setup
+                this.scene = new THREE.Scene();
+                this.scene.background = new THREE.Color(0x0f0f23);
+                
+                // Camera setup
+                this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                this.camera.position.set(30, 30, 30);
+                
+                // Renderer setup
+                this.renderer = new THREE.WebGLRenderer({ 
+                    canvas: document.getElementById('gameCanvas'),
+                    antialias: true 
+                });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.shadowMap.enabled = true;
+                this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                
+                // Lighting
+                const ambientLight = new THREE.AmbientLight(0x404040, 0.3);
+                this.scene.add(ambientLight);
+                
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                directionalLight.position.set(50, 50, 50);
+                directionalLight.castShadow = true;
+                directionalLight.shadow.mapSize.width = 2048;
+                directionalLight.shadow.mapSize.height = 2048;
+                this.scene.add(directionalLight);
+                
+                // Controls setup
+                this.setupControls();
+                
+                // Raycaster for mouse interaction
+                this.raycaster = new THREE.Raycaster();
+                this.mouse = new THREE.Vector2();
+                this.hoveredCell = null;
+                
+                // Cell materials
+                this.materials = {
+                    hidden: new THREE.MeshLambertMaterial({ color: 0x666666 }),
+                    revealed: new THREE.MeshLambertMaterial({ color: 0xeeeeee }),
+                    flagged: new THREE.MeshLambertMaterial({ color: 0xff4444 }),
+                    mine: new THREE.MeshLambertMaterial({ color: 0x220000 }),
+                    hover: new THREE.MeshLambertMaterial({ color: 0x88aaff })
+                };
+                
+                // Number materials (colors for 1-8)
+                this.numberMaterials = [
+                    null, // 0 - no material needed
+                    new THREE.MeshLambertMaterial({ color: 0x0000ff }), // 1 - blue
+                    new THREE.MeshLambertMaterial({ color: 0x008000 }), // 2 - green
+                    new THREE.MeshLambertMaterial({ color: 0xff0000 }), // 3 - red
+                    new THREE.MeshLambertMaterial({ color: 0x800080 }), // 4 - purple
+                    new THREE.MeshLambertMaterial({ color: 0x800000 }), // 5 - maroon
+                    new THREE.MeshLambertMaterial({ color: 0x008080 }), // 6 - teal
+                    new THREE.MeshLambertMaterial({ color: 0x000000 }), // 7 - black
+                    new THREE.MeshLambertMaterial({ color: 0x808080 })  // 8 - gray
+                ];
+            }
+
+            setupControls() {
+                this.isMouseDown = false;
+                this.mouseX = 0;
+                this.mouseY = 0;
+                this.cameraDistance = 50;
+                this.cameraTheta = 0;
+                this.cameraPhi = Math.PI / 4;
+                
+                this.keys = {
+                    w: false,
+                    a: false,
+                    s: false,
+                    d: false
+                };
+            }
+
+            initializeGame() {
+                const config = this.difficulties[this.currentDifficulty];
+                this.sizeX = config.x;
+                this.sizeY = config.y;
+                this.sizeZ = config.z;
+                this.totalMines = config.mines;
+                this.mineCount = this.totalMines;
+                this.gameState = 'playing';
+                this.firstClick = true;
+                this.timer = 0;
+                
+                this.createGrid();
+                this.renderGrid3D();
+                this.updateUI();
+                
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = null;
+                }
+                
+                // Reset camera
+                this.resetCamera();
+            }
+
+            createGrid() {
+                this.grid = [];
+                for (let x = 0; x < this.sizeX; x++) {
+                    this.grid[x] = [];
+                    for (let y = 0; y < this.sizeY; y++) {
+                        this.grid[x][y] = [];
+                        for (let z = 0; z < this.sizeZ; z++) {
+                            this.grid[x][y][z] = {
+                                isMine: false,
+                                isRevealed: false,
+                                isFlagged: false,
+                                adjacentMines: 0,
+                                mesh: null,
+                                position: { x, y, z }
+                            };
+                        }
+                    }
+                }
+            }
+
+            placeMines(excludeX, excludeY, excludeZ) {
+                // Create exclusion zone around first click
+                const excludeZone = new Set();
+                for (let x = Math.max(0, excludeX - 1); x <= Math.min(this.sizeX - 1, excludeX + 1); x++) {
+                    for (let y = Math.max(0, excludeY - 1); y <= Math.min(this.sizeY - 1, excludeY + 1); y++) {
+                        for (let z = Math.max(0, excludeZ - 1); z <= Math.min(this.sizeZ - 1, excludeZ + 1); z++) {
+                            excludeZone.add(`${x},${y},${z}`);
+                        }
+                    }
+                }
+                
+                let minesPlaced = 0;
+                const maxAttempts = this.sizeX * this.sizeY * this.sizeZ * 3;
+                let attempts = 0;
+                
+                while (minesPlaced < this.totalMines && attempts < maxAttempts) {
+                    const x = Math.floor(Math.random() * this.sizeX);
+                    const y = Math.floor(Math.random() * this.sizeY);
+                    const z = Math.floor(Math.random() * this.sizeZ);
+                    attempts++;
+                    
+                    if (excludeZone.has(`${x},${y},${z}`) || this.grid[x][y][z].isMine) {
+                        continue;
+                    }
+                    
+                    this.grid[x][y][z].isMine = true;
+                    minesPlaced++;
+                }
+                
+                // Calculate adjacent mine counts
+                for (let x = 0; x < this.sizeX; x++) {
+                    for (let y = 0; y < this.sizeY; y++) {
+                        for (let z = 0; z < this.sizeZ; z++) {
+                            if (!this.grid[x][y][z].isMine) {
+                                this.grid[x][y][z].adjacentMines = this.countAdjacentMines(x, y, z);
+                            }
+                        }
+                    }
+                }
+            }
+
+            countAdjacentMines(x, y, z) {
+                let count = 0;
+                for (let dx = -1; dx <= 1; dx++) {
+                    for (let dy = -1; dy <= 1; dy++) {
+                        for (let dz = -1; dz <= 1; dz++) {
+                            if (dx === 0 && dy === 0 && dz === 0) continue;
+                            
+                            const nx = x + dx;
+                            const ny = y + dy;
+                            const nz = z + dz;
+                            
+                            if (nx >= 0 && nx < this.sizeX && 
+                                ny >= 0 && ny < this.sizeY && 
+                                nz >= 0 && nz < this.sizeZ) {
+                                if (this.grid[nx][ny][nz].isMine) {
+                                    count++;
+                                }
+                            }
+                        }
+                    }
+                }
+                return count;
+            }
+
+            renderGrid3D() {
+                // Clear existing meshes
+                const cellsToRemove = [];
+                this.scene.traverse((child) => {
+                    if (child.userData.isCell) {
+                        cellsToRemove.push(child);
+                    }
+                });
+                cellsToRemove.forEach(cell => this.scene.remove(cell));
+                
+                // Create new meshes
+                const geometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+                const spacing = 1;
+                
+                for (let x = 0; x < this.sizeX; x++) {
+                    for (let y = 0; y < this.sizeY; y++) {
+                        for (let z = 0; z < this.sizeZ; z++) {
+                            const cell = this.grid[x][y][z];
+                            let material = this.materials.hidden;
+                            
+                            if (cell.isFlagged) {
+                                material = this.materials.flagged;
+                            } else if (cell.isRevealed) {
+                                if (cell.isMine) {
+                                    material = this.materials.mine;
+                                } else if (cell.adjacentMines > 0) {
+                                    material = this.numberMaterials[cell.adjacentMines];
+                                } else {
+                                    material = this.materials.revealed;
+                                }
+                            }
+                            
+                            const mesh = new THREE.Mesh(geometry, material);
+                            mesh.position.set(
+                                (x - this.sizeX/2) * spacing,
+                                (y - this.sizeY/2) * spacing,
+                                (z - this.sizeZ/2) * spacing
+                            );
+                            mesh.userData = {
+                                isCell: true,
+                                x: x,
+                                y: y,
+                                z: z,
+                                cell: cell
+                            };
+                            mesh.castShadow = true;
+                            mesh.receiveShadow = true;
+                            
+                            this.scene.add(mesh);
+                            cell.mesh = mesh;
+                        }
+                    }
+                }
+            }
+
+            handleCellClick(x, y, z) {
+                if (this.gameState !== 'playing') return;
+                
+                const cell = this.grid[x][y][z];
+                
+                if (cell.isFlagged && !this.flagMode) return;
+                
+                if (this.flagMode) {
+                    this.toggleFlag(x, y, z);
+                } else {
+                    this.revealCell(x, y, z);
+                }
+            }
+
+            revealCell(x, y, z) {
+                const cell = this.grid[x][y][z];
+                
+                if (cell.isRevealed || cell.isFlagged) return;
+                
+                if (this.firstClick) {
+                    this.placeMines(x, y, z);
+                    this.firstClick = false;
+                    this.startTimer();
+                    
+                    cell.isRevealed = true;
+                    
+                    if (cell.adjacentMines === 0) {
+                        this.revealAdjacentCells(x, y, z);
+                    }
+                    
+                    this.renderGrid3D();
+                    this.updateUI();
+                    return;
+                }
+                
+                cell.isRevealed = true;
+                
+                if (cell.isMine) {
+                    this.gameState = 'lost';
+                    this.revealAllMines();
+                    this.endGame();
+                } else {
+                    if (cell.adjacentMines === 0) {
+                        this.revealAdjacentCells(x, y, z);
+                    }
+                    
+                    this.checkWinCondition();
+                }
+                
+                this.renderGrid3D();
+                this.updateUI();
+            }
+
+            revealAdjacentCells(x, y, z) {
+                for (let dx = -1; dx <= 1; dx++) {
+                    for (let dy = -1; dy <= 1; dy++) {
+                        for (let dz = -1; dz <= 1; dz++) {
+                            if (dx === 0 && dy === 0 && dz === 0) continue;
+                            
+                            const nx = x + dx;
+                            const ny = y + dy;
+                            const nz = z + dz;
+                            
+                            if (nx >= 0 && nx < this.sizeX && 
+                                ny >= 0 && ny < this.sizeY && 
+                                nz >= 0 && nz < this.sizeZ) {
+                                const adjacentCell = this.grid[nx][ny][nz];
+                                if (!adjacentCell.isRevealed && !adjacentCell.isFlagged) {
+                                    this.revealCell(nx, ny, nz);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            toggleFlag(x, y, z) {
+                const cell = this.grid[x][y][z];
+                
+                if (cell.isRevealed) return;
+                
+                cell.isFlagged = !cell.isFlagged;
+                this.mineCount += cell.isFlagged ? -1 : 1;
+                
+                this.renderGrid3D();
+                this.updateUI();
+            }
+
+            revealAllMines() {
+                for (let x = 0; x < this.sizeX; x++) {
+                    for (let y = 0; y < this.sizeY; y++) {
+                        for (let z = 0; z < this.sizeZ; z++) {
+                            if (this.grid[x][y][z].isMine) {
+                                this.grid[x][y][z].isRevealed = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            checkWinCondition() {
+                let revealedSafeCells = 0;
+                const totalSafeCells = this.sizeX * this.sizeY * this.sizeZ - this.totalMines;
+                
+                for (let x = 0; x < this.sizeX; x++) {
+                    for (let y = 0; y < this.sizeY; y++) {
+                        for (let z = 0; z < this.sizeZ; z++) {
+                            const cell = this.grid[x][y][z];
+                            if (cell.isRevealed && !cell.isMine) {
+                                revealedSafeCells++;
+                            }
+                        }
+                    }
+                }
+                
+                if (revealedSafeCells === totalSafeCells) {
+                    this.gameState = 'won';
+                    this.endGame();
+                }
+            }
+
+            startTimer() {
+                this.timerInterval = setInterval(() => {
+                    this.timer++;
+                    this.updateUI();
+                }, 1000);
+            }
+
+            endGame() {
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = null;
+                }
+                
+                setTimeout(() => {
+                    this.showGameOver();
+                }, 500);
+            }
+
+            showGameOver() {
+                const overlay = document.getElementById('gameOverOverlay');
+                const title = document.getElementById('gameOverTitle');
+                const message = document.getElementById('gameOverMessage');
+                
+                if (this.gameState === 'won') {
+                    title.textContent = '🎉';
+                    message.textContent = `Congratulations! You won in ${this.timer} seconds!`;
+                } else {
+                    title.textContent = '💣';
+                    message.textContent = 'Game Over! Better luck next time.';
+                }
+                
+                overlay.style.display = 'flex';
+            }
+
+            updateUI() {
+                document.getElementById('mineCount').textContent = this.mineCount;
+                document.getElementById('timer').textContent = this.timer;
+                document.getElementById('gameMode').textContent = this.flagMode ? 'Flag Mode ON' : 'Click to Reveal';
+                
+                const statusEl = document.getElementById('gameStatus');
+                statusEl.className = 'status-indicator';
+                
+                switch (this.gameState) {
+                    case 'won':
+                        statusEl.textContent = 'Won! 🎉';
+                        statusEl.style.background = 'linear-gradient(45deg, #ffc107, #d39e00)';
+                        break;
+                    case 'lost':
+                        statusEl.textContent = 'Lost 💣';
+                        statusEl.style.background = 'linear-gradient(45deg, #dc3545, #a71e2a)';
+                        break;
+                    default:
+                        statusEl.textContent = 'Playing';
+                        statusEl.style.background = 'linear-gradient(45deg, #28a745, #1e7e34)';
+                }
+                
+                const flagBtn = document.getElementById('flagModeBtn');
+                flagBtn.className = this.flagMode ? 'btn-danger' : 'btn-warning';
+                flagBtn.textContent = this.flagMode ? '🚩 Flag ON' : '🚩 Flag OFF';
+            }
+
+            setupEventListeners() {
+                const canvas = document.getElementById('gameCanvas');
+                
+                // Mouse events
+                canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
+                canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
+                canvas.addEventListener('mouseup', (e) => this.onMouseUp(e));
+                canvas.addEventListener('wheel', (e) => this.onMouseWheel(e));
+                canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+                
+                // Keyboard events
+                document.addEventListener('keydown', (e) => this.onKeyDown(e));
+                document.addEventListener('keyup', (e) => this.onKeyUp(e));
+                
+                // Window resize
+                window.addEventListener('resize', () => this.onWindowResize());
+                
+                // Difficulty buttons
+                document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('active'));
+                        e.target.classList.add('active');
+                        this.currentDifficulty = e.target.dataset.difficulty;
+                        this.initializeGame();
+                    });
+                });
+            }
+
+            onMouseDown(event) {
+                event.preventDefault();
+                
+                if (event.button === 0) { // Left click
+                    this.isMouseDown = true;
+                    this.mouseX = event.clientX;
+                    this.mouseY = event.clientY;
+                    
+                    // Check for cell click
+                    this.checkCellClick(event);
+                } else if (event.button === 2) { // Right click
+                    this.checkCellClick(event, true);
+                }
+            }
+
+            onMouseMove(event) {
+                if (this.isMouseDown) {
+                    const deltaX = event.clientX - this.mouseX;
+                    const deltaY = event.clientY - this.mouseY;
+                    
+                    this.cameraTheta += deltaX * 0.01;
+                    this.cameraPhi = Math.max(0.1, Math.min(Math.PI - 0.1, this.cameraPhi + deltaY * 0.01));
+                    
+                    this.mouseX = event.clientX;
+                    this.mouseY = event.clientY;
+                }
+                
+                // Update hover effect
+                this.updateHover(event);
+            }
+
+            onMouseUp(event) {
+                this.isMouseDown = false;
+            }
+
+            onMouseWheel(event) {
+                event.preventDefault();
+                this.cameraDistance *= (1 + event.deltaY * 0.001);
+                this.cameraDistance = Math.max(5, Math.min(200, this.cameraDistance));
+            }
+
+            checkCellClick(event, isRightClick = false) {
+                this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+                
+                this.raycaster.setFromCamera(this.mouse, this.camera);
+                
+                const intersects = this.raycaster.intersectObjects(this.scene.children.filter(obj => obj.userData.isCell));
+                
+                if (intersects.length > 0) {
+                    const mesh = intersects[0].object;
+                    const { x, y, z } = mesh.userData;
+                    
+                    if (isRightClick) {
+                        // Right click always toggles flag
+                        this.toggleFlag(x, y, z);
+                    } else {
+                        // Left click handles normal game logic
+                        this.handleCellClick(x, y, z);
+                    }
+                    
+                    // Update coordinates display
+                    document.getElementById('coordinates').textContent = `Position: ${x}, ${y}, ${z}`;
+                }
+            }
+
+            updateHover(event) {
+                this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+                
+                this.raycaster.setFromCamera(this.mouse, this.camera);
+                
+                const intersects = this.raycaster.intersectObjects(this.scene.children.filter(obj => obj.userData.isCell));
+                
+                // Reset previous hover
+                if (this.hoveredCell && this.hoveredCell !== (intersects.length > 0 ? intersects[0].object : null)) {
+                    const cell = this.hoveredCell.userData.cell;
+                    let material = this.materials.hidden;
+                    
+                    if (cell.isFlagged) {
+                        material = this.materials.flagged;
+                    } else if (cell.isRevealed) {
+                        if (cell.isMine) {
+                            material = this.materials.mine;
+                        } else if (cell.adjacentMines > 0) {
+                            material = this.numberMaterials[cell.adjacentMines];
+                        } else {
+                            material = this.materials.revealed;
+                        }
+                    }
+                    
+                    this.hoveredCell.material = material;
+                }
+                
+                // Set new hover
+                if (intersects.length > 0 && !intersects[0].object.userData.cell.isRevealed) {
+                    this.hoveredCell = intersects[0].object;
+                    this.hoveredCell.material = this.materials.hover;
+                    
+                    const { x, y, z } = this.hoveredCell.userData;
+                    document.getElementById('coordinates').textContent = `Position: ${x}, ${y}, ${z}`;
+                } else {
+                    this.hoveredCell = null;
+                }
+            }
+
+            onKeyDown(event) {
+                switch (event.key.toLowerCase()) {
+                    case 'w': this.keys.w = true; break;
+                    case 'a': this.keys.a = true; break;
+                    case 's': this.keys.s = true; break;
+                    case 'd': this.keys.d = true; break;
+                    case ' ':
+                        event.preventDefault();
+                        this.toggleFlagMode();
+                        break;
+                    case 'r':
+                        this.initializeGame();
+                        break;
+                }
+            }
+
+            onKeyUp(event) {
+                switch (event.key.toLowerCase()) {
+                    case 'w': this.keys.w = false; break;
+                    case 'a': this.keys.a = false; break;
+                    case 's': this.keys.s = false; break;
+                    case 'd': this.keys.d = false; break;
+                }
+            }
+
+            onWindowResize() {
+                this.camera.aspect = window.innerWidth / window.innerHeight;
+                this.camera.updateProjectionMatrix();
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+            }
+
+            updateCamera() {
+                // WASD movement
+                const moveSpeed = 0.5;
+                if (this.keys.w) this.cameraDistance = Math.max(5, this.cameraDistance - moveSpeed);
+                if (this.keys.s) this.cameraDistance = Math.min(200, this.cameraDistance + moveSpeed);
+                if (this.keys.a) this.cameraTheta -= 0.02;
+                if (this.keys.d) this.cameraTheta += 0.02;
+                
+                // Auto rotate
+                if (this.autoRotate) {
+                    this.cameraTheta += 0.005;
+                }
+                
+                // Update camera position
+                this.camera.position.x = this.cameraDistance * Math.sin(this.cameraPhi) * Math.cos(this.cameraTheta);
+                this.camera.position.y = this.cameraDistance * Math.cos(this.cameraPhi);
+                this.camera.position.z = this.cameraDistance * Math.sin(this.cameraPhi) * Math.sin(this.cameraTheta);
+                
+                this.camera.lookAt(0, 0, 0);
+            }
+
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                
+                this.updateCamera();
+                this.renderer.render(this.scene, this.camera);
+            }
+
+            toggleFlagMode() {
+                this.flagMode = !this.flagMode;
+                this.updateUI();
+            }
+
+            resetCamera() {
+                this.cameraDistance = 50;
+                this.cameraTheta = 0;
+                this.cameraPhi = Math.PI / 4;
+                this.autoRotate = false;
+            }
+
+            toggleAutoRotate() {
+                this.autoRotate = !this.autoRotate;
+            }
+
+            switchView() {
+                if (this.currentDifficulty === 'expert') {
+                    // For 2D expert mode, switch between top and angled view
+                    if (this.cameraPhi < 0.2) {
+                        this.cameraPhi = Math.PI / 4;
+                        this.cameraDistance = 50;
+                    } else {
+                        this.cameraPhi = 0.1;
+                        this.cameraDistance = 30;
+                    }
+                } else {
+                    // For 3D modes, cycle through preset views
+                    if (this.cameraPhi < Math.PI / 3) {
+                        this.cameraPhi = Math.PI / 2;
+                    } else {
+                        this.cameraPhi = Math.PI / 4;
+                    }
+                }
+            }
+        }
+
+        // Global functions
+        let game = new Minesweeper3D();
+
+        function resetGame() {
+            game.initializeGame();
+        }
+
+        function toggleFlagMode() {
+            game.toggleFlagMode();
+        }
+
+        function hideGameOver() {
+            document.getElementById('gameOverOverlay').style.display = 'none';
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log('Fullscreen not supported');
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        function resetCamera() {
+            game.resetCamera();
+        }
+
+        function toggleAutoRotate() {
+            game.toggleAutoRotate();
+        }
+
+        function switchView() {
+            game.switchView();
+        }
+    </script>
+</body>
+</html>
