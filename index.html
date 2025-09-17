@@ -432,13 +432,25 @@
             }
 
             placeMines(excludeRow, excludeCol) {
+                // Create exclusion zone around first click (3x3 area)
+                const excludeZone = new Set();
+                for (let r = Math.max(0, excludeRow - 1); r <= Math.min(this.rows - 1, excludeRow + 1); r++) {
+                    for (let c = Math.max(0, excludeCol - 1); c <= Math.min(this.cols - 1, excludeCol + 1); c++) {
+                        excludeZone.add(`${r},${c}`);
+                    }
+                }
+                
                 let minesPlaced = 0;
-                while (minesPlaced < this.totalMines) {
+                let attempts = 0;
+                const maxAttempts = this.rows * this.cols * 3; // Prevent infinite loop
+                
+                while (minesPlaced < this.totalMines && attempts < maxAttempts) {
                     const row = Math.floor(Math.random() * this.rows);
                     const col = Math.floor(Math.random() * this.cols);
+                    attempts++;
                     
-                    // Don't place mine on first click or if already has mine
-                    if ((row === excludeRow && col === excludeCol) || this.grid[row][col].isMine) {
+                    // Don't place mine in exclusion zone or if cell already has mine
+                    if (excludeZone.has(`${row},${col}`) || this.grid[row][col].isMine) {
                         continue;
                     }
                     
