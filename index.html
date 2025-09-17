@@ -110,6 +110,10 @@
             background: linear-gradient(45deg, #6c757d, #495057);
         }
 
+        .btn-3d {
+            background: linear-gradient(45deg, #17a2b8, #117a8b);
+        }
+
         .game-area {
             position: relative;
             overflow: auto;
@@ -196,6 +200,7 @@
             display: flex;
             gap: 5px;
             margin-bottom: 15px;
+            flex-wrap: wrap;
         }
 
         .difficulty-btn {
@@ -272,6 +277,52 @@
             background: linear-gradient(45deg, #dc3545, #a71e2a);
         }
 
+        .custom-settings {
+            display: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .custom-settings.active {
+            display: block;
+        }
+
+        .custom-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .custom-input {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .custom-input label {
+            font-size: 12px;
+            color: #ccc;
+        }
+
+        .custom-input input {
+            width: 60px;
+            padding: 5px;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .custom-input input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
         @media (max-width: 768px) {
             .game-container {
                 padding: 10px;
@@ -295,6 +346,10 @@
             button {
                 padding: 8px 15px;
                 font-size: 12px;
+            }
+
+            .difficulty-selector {
+                justify-content: center;
             }
         }
 
@@ -325,17 +380,37 @@
             <button class="difficulty-btn btn-secondary" data-difficulty="beginner">Beginner (9×9)</button>
             <button class="difficulty-btn btn-secondary" data-difficulty="intermediate">Intermediate (16×16)</button>
             <button class="difficulty-btn btn-secondary active" data-difficulty="expert">Expert (48×48)</button>
+            <button class="difficulty-btn btn-secondary" data-difficulty="custom">Custom</button>
+        </div>
+
+        <div class="custom-settings" id="customSettings">
+            <div class="custom-controls">
+                <div class="custom-input">
+                    <label>Width</label>
+                    <input type="number" id="customWidth" min="5" max="50" value="20" placeholder="20">
+                </div>
+                <div class="custom-input">
+                    <label>Height</label>
+                    <input type="number" id="customHeight" min="5" max="50" value="20" placeholder="20">
+                </div>
+                <div class="custom-input">
+                    <label>Mines</label>
+                    <input type="number" id="customMines" min="1" max="400" value="80" placeholder="80">
+                </div>
+                <button class="btn-success" onclick="applyCustomSettings()">Apply Custom</button>
+            </div>
         </div>
 
         <div class="header">
             <div class="stat">
                 <div class="stat-icon">💣</div>
-                <div class="stat-value" id="mineCount">40</div>
+                <div class="stat-value" id="mineCount">480</div>
             </div>
 
             <div class="controls">
                 <button class="btn-primary" onclick="resetGame()">🔄 Restart</button>
                 <button class="btn-warning" id="flagModeBtn" onclick="toggleFlagMode()">🚩 Flag Mode</button>
+                <button class="btn-3d" onclick="open3DVersion()">🎮 Play 3D Version</button>
                 <button class="btn-success" onclick="toggleFullscreen()">⛶ Fullscreen</button>
             </div>
 
@@ -377,7 +452,8 @@
                 this.difficulties = {
                     beginner: { rows: 9, cols: 9, mines: 10 },
                     intermediate: { rows: 16, cols: 16, mines: 40 },
-                    expert: { rows: 48, cols: 48, mines: 480 }
+                    expert: { rows: 48, cols: 48, mines: 480 },
+                    custom: { rows: 20, cols: 20, mines: 80 }
                 };
                 
                 this.currentDifficulty = 'expert';
@@ -528,12 +604,12 @@
                 const col = parseInt(e.target.dataset.col);
                 const cell = this.grid[row][col];
                 
-                if (cell.isFlagged) return;
-                
                 if (this.flagMode) {
                     this.toggleFlag(row, col);
                 } else {
-                    this.revealCell(row, col);
+                    if (!cell.isFlagged) {
+                        this.revealCell(row, col);
+                    }
                 }
             }
 
@@ -712,8 +788,18 @@
                     btn.addEventListener('click', (e) => {
                         document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('active'));
                         e.target.classList.add('active');
-                        this.currentDifficulty = e.target.dataset.difficulty;
-                        this.initializeGame();
+                        
+                        const difficulty = e.target.dataset.difficulty;
+                        
+                        // Show/hide custom settings
+                        const customSettings = document.getElementById('customSettings');
+                        if (difficulty === 'custom') {
+                            customSettings.classList.add('active');
+                        } else {
+                            customSettings.classList.remove('active');
+                            this.currentDifficulty = difficulty;
+                            this.initializeGame();
+                        }
                     });
                 });
 
@@ -738,7 +824,7 @@
             }
 
             adjustZoom(delta) {
-                this.zoomLevel = Math.max(0.5, Math.min(2.0, this.zoomLevel + delta));
+                this.zoomLevel = Math.max(0.3, Math.min(3.0, this.zoomLevel + delta));
                 this.renderGrid();
                 this.updateUI();
             }
@@ -771,6 +857,33 @@
             } else {
                 document.exitFullscreen();
             }
+        }
+
+        function open3DVersion() {
+            window.open('minesweeper-3d.html', '_blank');
+        }
+
+        function applyCustomSettings() {
+            const width = parseInt(document.getElementById('customWidth').value) || 20;
+            const height = parseInt(document.getElementById('customHeight').value) || 20;
+            const mines = parseInt(document.getElementById('customMines').value) || 80;
+            
+            // Validate inputs
+            const maxMines = Math.floor(width * height * 0.8); // Max 80% of cells can be mines
+            const validatedMines = Math.min(Math.max(1, mines), maxMines);
+            
+            // Update custom difficulty
+            game.difficulties.custom = {
+                rows: Math.min(Math.max(5, height), 50),
+                cols: Math.min(Math.max(5, width), 50),
+                mines: validatedMines
+            };
+            
+            game.currentDifficulty = 'custom';
+            game.initializeGame();
+            
+            // Hide custom settings after applying
+            document.getElementById('customSettings').classList.remove('active');
         }
 
         // Touch gestures for mobile
