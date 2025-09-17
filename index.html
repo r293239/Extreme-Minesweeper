@@ -322,10 +322,9 @@
 <body>
     <div class="game-container">
         <div class="difficulty-selector">
-            <button class="difficulty-btn btn-secondary active" data-difficulty="beginner">Beginner</button>
-            <button class="difficulty-btn btn-secondary" data-difficulty="intermediate">Intermediate</button>
-            <button class="difficulty-btn btn-secondary" data-difficulty="expert">Expert</button>
-            <button class="difficulty-btn btn-secondary" data-difficulty="custom">Custom</button>
+            <button class="difficulty-btn btn-secondary" data-difficulty="beginner">Beginner (9×9)</button>
+            <button class="difficulty-btn btn-secondary" data-difficulty="intermediate">Intermediate (16×16)</button>
+            <button class="difficulty-btn btn-secondary active" data-difficulty="expert">Expert (48×48)</button>
         </div>
 
         <div class="header">
@@ -378,11 +377,10 @@
                 this.difficulties = {
                     beginner: { rows: 9, cols: 9, mines: 10 },
                     intermediate: { rows: 16, cols: 16, mines: 40 },
-                    expert: { rows: 16, cols: 30, mines: 99 },
-                    custom: { rows: 20, cols: 20, mines: 80 }
+                    expert: { rows: 48, cols: 48, mines: 480 }
                 };
                 
-                this.currentDifficulty = 'beginner';
+                this.currentDifficulty = 'expert';
                 this.grid = [];
                 this.gameState = 'playing'; // playing, won, lost
                 this.flagMode = false;
@@ -555,9 +553,22 @@
                 if (cell.isRevealed || cell.isFlagged) return;
                 
                 if (this.firstClick) {
+                    // Place mines AFTER first click to ensure it's always solvable
                     this.placeMines(row, col);
                     this.firstClick = false;
                     this.startTimer();
+                    
+                    // Now reveal the first cell (guaranteed safe)
+                    cell.isRevealed = true;
+                    
+                    // If it's an empty cell (0 adjacent mines), auto-reveal surrounding area
+                    if (cell.adjacentMines === 0) {
+                        this.revealAdjacentCells(row, col);
+                    }
+                    
+                    this.renderGrid();
+                    this.updateUI();
+                    return;
                 }
                 
                 cell.isRevealed = true;
