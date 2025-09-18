@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💣 3D Minesweeper Pro</title>
+    <title>💣 3D Minesweeper Pro Enhanced</title>
     <style>
         * {
             margin: 0;
@@ -44,11 +44,12 @@
         }
 
         .hud-section {
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.85);
             border-radius: 15px;
             padding: 15px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
 
         .stat {
@@ -83,14 +84,19 @@
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
             color: white;
             pointer-events: auto;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
         }
 
         button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
         }
 
         .btn-primary { background: linear-gradient(45deg, #007bff, #0056b3); }
@@ -117,6 +123,7 @@
 
         .difficulty-btn.active {
             background: linear-gradient(45deg, #28a745, #1e7e34);
+            box-shadow: 0 0 15px rgba(40, 167, 69, 0.4);
         }
 
         .game-info {
@@ -129,13 +136,14 @@
             align-items: center;
             flex-wrap: wrap;
             gap: 10px;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.85);
             border-radius: 15px;
             padding: 15px;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(15px);
             font-size: 12px;
             color: #ccc;
             pointer-events: auto;
+            border: 1px solid rgba(255, 255, 255, 0.15);
         }
 
         .camera-controls {
@@ -151,7 +159,7 @@
         .camera-btn {
             padding: 8px 12px;
             font-size: 12px;
-            min-width: 80px;
+            min-width: 100px;
         }
 
         #gameCanvas {
@@ -173,6 +181,7 @@
             justify-content: center;
             z-index: 1000;
             pointer-events: auto;
+            backdrop-filter: blur(5px);
         }
 
         .game-over-content {
@@ -182,11 +191,19 @@
             text-align: center;
             max-width: 400px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
         }
 
         .game-over-title {
             font-size: 48px;
             margin-bottom: 20px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
         }
 
         .instructions {
@@ -194,19 +211,22 @@
             top: 50%;
             left: 20px;
             transform: translateY(-50%);
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.85);
             border-radius: 15px;
             padding: 20px;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(15px);
             max-width: 300px;
             font-size: 12px;
             line-height: 1.6;
             pointer-events: auto;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: opacity 0.3s ease;
         }
 
         .instructions h3 {
             margin-bottom: 10px;
             color: #ffc107;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
         }
 
         .instructions ul {
@@ -227,13 +247,70 @@
             color: #007bff;
         }
 
+        .performance-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 10px;
+            color: #888;
+            pointer-events: auto;
+            font-family: 'Courier New', monospace;
+        }
+
+        .settings-panel {
+            position: absolute;
+            top: 250px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.85);
+            border-radius: 15px;
+            padding: 15px;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            pointer-events: auto;
+            max-width: 200px;
+        }
+
+        .settings-panel h4 {
+            margin-bottom: 10px;
+            color: #ffc107;
+            font-size: 14px;
+        }
+
+        .setting-item {
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .setting-item input[type="range"] {
+            flex: 1;
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .setting-item input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #007bff;
+            cursor: pointer;
+        }
+
         @media (max-width: 768px) {
             .game-hud {
                 flex-direction: column;
                 align-items: stretch;
             }
             
-            .instructions {
+            .instructions, .settings-panel {
                 display: none;
             }
             
@@ -242,6 +319,10 @@
                 right: 10px;
                 bottom: 100px;
                 top: auto;
+            }
+
+            .performance-info {
+                display: none;
             }
         }
     </style>
@@ -263,6 +344,7 @@
                     <button class="btn-primary" onclick="resetGame()">🔄 Restart</button>
                     <button class="btn-warning" id="flagModeBtn" onclick="toggleFlagMode()">🚩 Flag Mode</button>
                     <button class="btn-success" onclick="toggleFullscreen()">⛶ Fullscreen</button>
+                    <button class="btn-secondary" id="pauseBtn" onclick="togglePause()">⏸️ Pause</button>
                 </div>
             </div>
 
@@ -278,12 +360,30 @@
             <button class="difficulty-btn btn-secondary" data-difficulty="beginner">Beginner<br>9×9×9</button>
             <button class="difficulty-btn btn-secondary" data-difficulty="intermediate">Intermediate<br>16×16×16</button>
             <button class="difficulty-btn btn-secondary active" data-difficulty="expert">Expert<br>48×48×1</button>
+            <button class="difficulty-btn btn-secondary" data-difficulty="custom">Custom<br>Settings</button>
         </div>
 
         <div class="camera-controls">
             <button class="camera-btn btn-secondary" onclick="resetCamera()">📷 Reset View</button>
-            <button class="camera-btn btn-secondary" onclick="toggleAutoRotate()">🔄 Auto Rotate</button>
+            <button class="camera-btn btn-secondary" onclick="toggleAutoRotate()" id="autoRotateBtn">🔄 Auto Rotate</button>
             <button class="camera-btn btn-secondary" onclick="switchView()">👁️ Switch View</button>
+            <button class="camera-btn btn-secondary" onclick="toggleWireframe()" id="wireframeBtn">🔲 Wireframe</button>
+        </div>
+
+        <div class="settings-panel">
+            <h4>Graphics</h4>
+            <div class="setting-item">
+                <span>Effects:</span>
+                <input type="range" id="effectsSlider" min="0" max="2" value="2" onchange="updateGraphics()">
+            </div>
+            <div class="setting-item">
+                <span>Grid:</span>
+                <input type="checkbox" id="gridToggle" checked onchange="toggleGrid()">
+            </div>
+            <div class="setting-item">
+                <span>Shadows:</span>
+                <input type="checkbox" id="shadowToggle" checked onchange="toggleShadows()">
+            </div>
         </div>
 
         <div class="instructions">
@@ -295,6 +395,8 @@
                 <li>Right-click: Quick flag</li>
                 <li>WASD: Move camera</li>
                 <li>Space: Toggle flag mode</li>
+                <li>P: Pause game</li>
+                <li>R: Restart</li>
             </ul>
             <h3>Game Rules</h3>
             <ul>
@@ -302,12 +404,20 @@
                 <li>Numbers show adjacent mines</li>
                 <li>Flag suspected mines</li>
                 <li>First click is always safe</li>
+                <li>Middle-click: Auto-reveal</li>
             </ul>
+        </div>
+
+        <div class="performance-info" id="performanceInfo">
+            FPS: 60<br>
+            Cells: 0<br>
+            Draw calls: 0
         </div>
 
         <div class="game-info">
             <span id="gameMode">Click to Reveal</span>
             <span id="coordinates">Position: 0, 0, 0</span>
+            <span id="progress">Progress: 0%</span>
             <div id="gameStatus" class="status-indicator">Playing</div>
         </div>
     </div>
@@ -316,6 +426,7 @@
         <div class="game-over-content">
             <div class="game-over-title" id="gameOverTitle">🎉</div>
             <div class="game-over-message" id="gameOverMessage">Congratulations!</div>
+            <div class="game-over-stats" id="gameOverStats"></div>
             <div class="controls">
                 <button class="btn-primary" onclick="resetGame(); hideGameOver()">New Game</button>
                 <button class="btn-secondary" onclick="hideGameOver()">Continue</button>
@@ -330,18 +441,29 @@
                 this.difficulties = {
                     beginner: { x: 9, y: 9, z: 9, mines: 80 },
                     intermediate: { x: 16, y: 16, z: 16, mines: 400 },
-                    expert: { x: 48, y: 48, z: 1, mines: 480 }
+                    expert: { x: 48, y: 48, z: 1, mines: 480 },
+                    custom: { x: 20, y: 20, z: 5, mines: 200 }
                 };
                 
                 this.currentDifficulty = 'expert';
                 this.grid = [];
                 this.gameState = 'playing';
+                this.isPaused = false;
                 this.flagMode = false;
                 this.firstClick = true;
                 this.timer = 0;
                 this.timerInterval = null;
                 this.mineCount = 0;
                 this.autoRotate = false;
+                this.wireframe = false;
+                this.showGrid = true;
+                this.effectsLevel = 2;
+                this.enableShadows = true;
+                
+                // Performance tracking
+                this.frameCount = 0;
+                this.lastTime = performance.now();
+                this.fps = 60;
                 
                 this.initThree();
                 this.initializeGame();
@@ -354,6 +476,11 @@
                 this.scene = new THREE.Scene();
                 this.scene.background = new THREE.Color(0x0f0f23);
                 
+                // Fog for depth perception
+                if (this.effectsLevel >= 1) {
+                    this.scene.fog = new THREE.Fog(0x0f0f23, 10, 100);
+                }
+                
                 // Camera setup
                 this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
                 this.camera.position.set(30, 30, 30);
@@ -361,22 +488,18 @@
                 // Renderer setup
                 this.renderer = new THREE.WebGLRenderer({ 
                     canvas: document.getElementById('gameCanvas'),
-                    antialias: true 
+                    antialias: this.effectsLevel >= 2,
+                    powerPreference: "high-performance"
                 });
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
-                this.renderer.shadowMap.enabled = true;
+                this.renderer.shadowMap.enabled = this.enableShadows;
                 this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                this.renderer.outputEncoding = THREE.sRGBEncoding;
+                this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                this.renderer.toneMappingExposure = 1.2;
                 
                 // Lighting
-                const ambientLight = new THREE.AmbientLight(0x404040, 0.3);
-                this.scene.add(ambientLight);
-                
-                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-                directionalLight.position.set(50, 50, 50);
-                directionalLight.castShadow = true;
-                directionalLight.shadow.mapSize.width = 2048;
-                directionalLight.shadow.mapSize.height = 2048;
-                this.scene.add(directionalLight);
+                this.setupLighting();
                 
                 // Controls setup
                 this.setupControls();
@@ -385,28 +508,108 @@
                 this.raycaster = new THREE.Raycaster();
                 this.mouse = new THREE.Vector2();
                 this.hoveredCell = null;
+                this.lastHoveredPosition = null;
                 
-                // Cell materials
+                // Materials with improved shading
+                this.setupMaterials();
+                
+                // Grid helper
+                this.gridHelper = null;
+                this.createGridHelper();
+            }
+
+            setupLighting() {
+                // Remove existing lights
+                this.scene.children = this.scene.children.filter(child => !(child instanceof THREE.Light));
+                
+                const ambientLight = new THREE.AmbientLight(0x404080, 0.4);
+                this.scene.add(ambientLight);
+                
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                directionalLight.position.set(50, 50, 50);
+                
+                if (this.enableShadows) {
+                    directionalLight.castShadow = true;
+                    directionalLight.shadow.mapSize.width = 1024;
+                    directionalLight.shadow.mapSize.height = 1024;
+                    directionalLight.shadow.camera.near = 0.5;
+                    directionalLight.shadow.camera.far = 200;
+                    directionalLight.shadow.camera.left = -50;
+                    directionalLight.shadow.camera.right = 50;
+                    directionalLight.shadow.camera.top = 50;
+                    directionalLight.shadow.camera.bottom = -50;
+                }
+                
+                this.scene.add(directionalLight);
+                
+                // Additional lighting for better visibility
+                const pointLight = new THREE.PointLight(0x4080ff, 0.3, 100);
+                pointLight.position.set(-30, 30, -30);
+                this.scene.add(pointLight);
+            }
+
+            setupMaterials() {
                 this.materials = {
-                    hidden: new THREE.MeshLambertMaterial({ color: 0x666666 }),
-                    revealed: new THREE.MeshLambertMaterial({ color: 0xeeeeee }),
-                    flagged: new THREE.MeshLambertMaterial({ color: 0xff4444 }),
-                    mine: new THREE.MeshLambertMaterial({ color: 0x220000 }),
-                    hover: new THREE.MeshLambertMaterial({ color: 0x88aaff })
+                    hidden: new THREE.MeshPhongMaterial({ 
+                        color: 0x666666,
+                        shininess: 30,
+                        transparent: false
+                    }),
+                    revealed: new THREE.MeshPhongMaterial({ 
+                        color: 0xeeeeee,
+                        shininess: 10
+                    }),
+                    flagged: new THREE.MeshPhongMaterial({ 
+                        color: 0xff4444,
+                        shininess: 50,
+                        emissive: 0x220000,
+                        emissiveIntensity: 0.1
+                    }),
+                    mine: new THREE.MeshPhongMaterial({ 
+                        color: 0x330000,
+                        shininess: 20,
+                        emissive: 0x440000,
+                        emissiveIntensity: 0.3
+                    }),
+                    hover: new THREE.MeshPhongMaterial({ 
+                        color: 0x88aaff,
+                        shininess: 100,
+                        emissive: 0x002244,
+                        emissiveIntensity: 0.2
+                    }),
+                    explosion: new THREE.MeshPhongMaterial({
+                        color: 0xff6600,
+                        emissive: 0xff2200,
+                        emissiveIntensity: 0.5
+                    })
                 };
                 
-                // Number materials (colors for 1-8)
+                // Enhanced number materials with better colors and effects
                 this.numberMaterials = [
-                    null, // 0 - no material needed
-                    new THREE.MeshLambertMaterial({ color: 0x0000ff }), // 1 - blue
-                    new THREE.MeshLambertMaterial({ color: 0x008000 }), // 2 - green
-                    new THREE.MeshLambertMaterial({ color: 0xff0000 }), // 3 - red
-                    new THREE.MeshLambertMaterial({ color: 0x800080 }), // 4 - purple
-                    new THREE.MeshLambertMaterial({ color: 0x800000 }), // 5 - maroon
-                    new THREE.MeshLambertMaterial({ color: 0x008080 }), // 6 - teal
-                    new THREE.MeshLambertMaterial({ color: 0x000000 }), // 7 - black
-                    new THREE.MeshLambertMaterial({ color: 0x808080 })  // 8 - gray
+                    null, // 0
+                    new THREE.MeshPhongMaterial({ color: 0x2266ff, shininess: 20 }), // 1 - blue
+                    new THREE.MeshPhongMaterial({ color: 0x22aa22, shininess: 20 }), // 2 - green
+                    new THREE.MeshPhongMaterial({ color: 0xff2222, shininess: 20 }), // 3 - red
+                    new THREE.MeshPhongMaterial({ color: 0x8822aa, shininess: 20 }), // 4 - purple
+                    new THREE.MeshPhongMaterial({ color: 0xaa2222, shininess: 20 }), // 5 - maroon
+                    new THREE.MeshPhongMaterial({ color: 0x22aaaa, shininess: 20 }), // 6 - teal
+                    new THREE.MeshPhongMaterial({ color: 0x222222, shininess: 5 }),  // 7 - black
+                    new THREE.MeshPhongMaterial({ color: 0x888888, shininess: 10 })  // 8 - gray
                 ];
+            }
+
+            createGridHelper() {
+                if (this.gridHelper) {
+                    this.scene.remove(this.gridHelper);
+                }
+                
+                if (!this.showGrid) return;
+                
+                const config = this.difficulties[this.currentDifficulty];
+                const size = Math.max(config.x, config.y, config.z);
+                this.gridHelper = new THREE.GridHelper(size * 2, size, 0x444444, 0x222222);
+                this.gridHelper.position.y = -config.y / 2;
+                this.scene.add(this.gridHelper);
             }
 
             setupControls() {
@@ -416,12 +619,11 @@
                 this.cameraDistance = 50;
                 this.cameraTheta = 0;
                 this.cameraPhi = Math.PI / 4;
+                this.cameraTarget = new THREE.Vector3(0, 0, 0);
                 
                 this.keys = {
-                    w: false,
-                    a: false,
-                    s: false,
-                    d: false
+                    w: false, a: false, s: false, d: false,
+                    shift: false, ctrl: false
                 };
             }
 
@@ -433,11 +635,13 @@
                 this.totalMines = config.mines;
                 this.mineCount = this.totalMines;
                 this.gameState = 'playing';
+                this.isPaused = false;
                 this.firstClick = true;
                 this.timer = 0;
                 
                 this.createGrid();
                 this.renderGrid3D();
+                this.createGridHelper();
                 this.updateUI();
                 
                 if (this.timerInterval) {
@@ -445,7 +649,6 @@
                     this.timerInterval = null;
                 }
                 
-                // Reset camera
                 this.resetCamera();
             }
 
@@ -462,7 +665,8 @@
                                 isFlagged: false,
                                 adjacentMines: 0,
                                 mesh: null,
-                                position: { x, y, z }
+                                position: { x, y, z },
+                                animationPhase: 0
                             };
                         }
                     }
@@ -470,11 +674,13 @@
             }
 
             placeMines(excludeX, excludeY, excludeZ) {
-                // Create exclusion zone around first click
+                // Create larger exclusion zone for better first-click experience
                 const excludeZone = new Set();
-                for (let x = Math.max(0, excludeX - 1); x <= Math.min(this.sizeX - 1, excludeX + 1); x++) {
-                    for (let y = Math.max(0, excludeY - 1); y <= Math.min(this.sizeY - 1, excludeY + 1); y++) {
-                        for (let z = Math.max(0, excludeZ - 1); z <= Math.min(this.sizeZ - 1, excludeZ + 1); z++) {
+                const radius = Math.max(1, Math.min(3, Math.floor(Math.min(this.sizeX, this.sizeY, this.sizeZ) / 10)));
+                
+                for (let x = Math.max(0, excludeX - radius); x <= Math.min(this.sizeX - 1, excludeX + radius); x++) {
+                    for (let y = Math.max(0, excludeY - radius); y <= Math.min(this.sizeY - 1, excludeY + radius); y++) {
+                        for (let z = Math.max(0, excludeZ - radius); z <= Math.min(this.sizeZ - 1, excludeZ + radius); z++) {
                             excludeZone.add(`${x},${y},${z}`);
                         }
                     }
@@ -544,8 +750,13 @@
                 });
                 cellsToRemove.forEach(cell => this.scene.remove(cell));
                 
-                // Create new meshes
-                const geometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+                // Create new meshes with optimized geometry
+                const geometries = {
+                    normal: new THREE.BoxGeometry(0.8, 0.8, 0.8),
+                    rounded: new THREE.BoxGeometry(0.8, 0.8, 0.8, 2, 2, 2)
+                };
+                
+                const geometry = this.effectsLevel >= 2 ? geometries.rounded : geometries.normal;
                 const spacing = 1;
                 
                 for (let x = 0; x < this.sizeX; x++) {
@@ -566,6 +777,12 @@
                                 }
                             }
                             
+                            // Apply wireframe if enabled
+                            if (this.wireframe) {
+                                material = material.clone();
+                                material.wireframe = true;
+                            }
+                            
                             const mesh = new THREE.Mesh(geometry, material);
                             mesh.position.set(
                                 (x - this.sizeX/2) * spacing,
@@ -579,8 +796,11 @@
                                 z: z,
                                 cell: cell
                             };
-                            mesh.castShadow = true;
-                            mesh.receiveShadow = true;
+                            
+                            if (this.enableShadows) {
+                                mesh.castShadow = true;
+                                mesh.receiveShadow = true;
+                            }
                             
                             this.scene.add(mesh);
                             cell.mesh = mesh;
@@ -589,10 +809,18 @@
                 }
             }
 
-            handleCellClick(x, y, z) {
-                if (this.gameState !== 'playing') return;
+            handleCellClick(x, y, z, isMiddleClick = false) {
+                if (this.gameState !== 'playing' || this.isPaused) return;
                 
                 const cell = this.grid[x][y][z];
+                
+                if (isMiddleClick) {
+                    // Middle click: Auto-reveal adjacent cells if flags match mine count
+                    if (cell.isRevealed && cell.adjacentMines > 0) {
+                        this.autoRevealAdjacent(x, y, z);
+                    }
+                    return;
+                }
                 
                 if (cell.isFlagged && !this.flagMode) return;
                 
@@ -600,6 +828,33 @@
                     this.toggleFlag(x, y, z);
                 } else {
                     this.revealCell(x, y, z);
+                }
+            }
+
+            autoRevealAdjacent(x, y, z) {
+                const cell = this.grid[x][y][z];
+                let flaggedCount = 0;
+                const adjacentCells = [];
+                
+                // Count flagged adjacent cells
+                for (let dx = -1; dx <= 1; dx++) {
+                    for (let dy = -1; dy <= 1; dy++) {
+                        for (let dz = -1; dz <= 1; dz++) {
+                            if (dx === 0 && dy === 0 && dz === 0) continue;
+                            
+                            const nx = x + dx, ny = y + dy, nz = z + dz;
+                            if (nx >= 0 && nx < this.sizeX && ny >= 0 && ny < this.sizeY && nz >= 0 && nz < this.sizeZ) {
+                                const adjCell = this.grid[nx][ny][nz];
+                                if (adjCell.isFlagged) flaggedCount++;
+                                else if (!adjCell.isRevealed) adjacentCells.push({ x: nx, y: ny, z: nz });
+                            }
+                        }
+                    }
+                }
+                
+                // If flagged count matches mine count, reveal all unflagged adjacent cells
+                if (flaggedCount === cell.adjacentMines) {
+                    adjacentCells.forEach(({x, y, z}) => this.revealCell(x, y, z));
                 }
             }
 
@@ -612,19 +867,10 @@
                     this.placeMines(x, y, z);
                     this.firstClick = false;
                     this.startTimer();
-                    
-                    cell.isRevealed = true;
-                    
-                    if (cell.adjacentMines === 0) {
-                        this.revealAdjacentCells(x, y, z);
-                    }
-                    
-                    this.renderGrid3D();
-                    this.updateUI();
-                    return;
                 }
                 
                 cell.isRevealed = true;
+                this.animateReveal(cell);
                 
                 if (cell.isMine) {
                     this.gameState = 'lost';
@@ -634,7 +880,6 @@
                     if (cell.adjacentMines === 0) {
                         this.revealAdjacentCells(x, y, z);
                     }
-                    
                     this.checkWinCondition();
                 }
                 
@@ -642,22 +887,49 @@
                 this.updateUI();
             }
 
+            animateReveal(cell) {
+                if (!cell.mesh || this.effectsLevel < 1) return;
+                
+                const originalScale = cell.mesh.scale.clone();
+                cell.mesh.scale.set(0.1, 0.1, 0.1);
+                
+                const animate = () => {
+                    cell.mesh.scale.lerp(originalScale, 0.3);
+                    if (cell.mesh.scale.length() < originalScale.length() * 0.95) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        cell.mesh.scale.copy(originalScale);
+                    }
+                };
+                animate();
+            }
+
             revealAdjacentCells(x, y, z) {
-                for (let dx = -1; dx <= 1; dx++) {
-                    for (let dy = -1; dy <= 1; dy++) {
-                        for (let dz = -1; dz <= 1; dz++) {
-                            if (dx === 0 && dy === 0 && dz === 0) continue;
-                            
-                            const nx = x + dx;
-                            const ny = y + dy;
-                            const nz = z + dz;
-                            
-                            if (nx >= 0 && nx < this.sizeX && 
-                                ny >= 0 && ny < this.sizeY && 
-                                nz >= 0 && nz < this.sizeZ) {
-                                const adjacentCell = this.grid[nx][ny][nz];
-                                if (!adjacentCell.isRevealed && !adjacentCell.isFlagged) {
-                                    this.revealCell(nx, ny, nz);
+                const stack = [{x, y, z}];
+                const processed = new Set();
+                
+                while (stack.length > 0) {
+                    const {x: cx, y: cy, z: cz} = stack.pop();
+                    const key = `${cx},${cy},${cz}`;
+                    
+                    if (processed.has(key)) continue;
+                    processed.add(key);
+                    
+                    for (let dx = -1; dx <= 1; dx++) {
+                        for (let dy = -1; dy <= 1; dy++) {
+                            for (let dz = -1; dz <= 1; dz++) {
+                                if (dx === 0 && dy === 0 && dz === 0) continue;
+                                
+                                const nx = cx + dx, ny = cy + dy, nz = cz + dz;
+                                if (nx >= 0 && nx < this.sizeX && ny >= 0 && ny < this.sizeY && nz >= 0 && nz < this.sizeZ) {
+                                    const adjCell = this.grid[nx][ny][nz];
+                                    if (!adjCell.isRevealed && !adjCell.isFlagged && !adjCell.isMine) {
+                                        adjCell.isRevealed = true;
+                                        this.animateReveal(adjCell);
+                                        if (adjCell.adjacentMines === 0) {
+                                            stack.push({x: nx, y: ny, z: nz});
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -673,6 +945,21 @@
                 cell.isFlagged = !cell.isFlagged;
                 this.mineCount += cell.isFlagged ? -1 : 1;
                 
+                // Flag animation
+                if (cell.mesh && this.effectsLevel >= 1) {
+                    const targetY = cell.isFlagged ? 0.3 : 0;
+                    const animate = () => {
+                        const currentY = cell.mesh.position.y - ((cell.position.y - this.sizeY/2));
+                        const newY = THREE.MathUtils.lerp(currentY, targetY, 0.2);
+                        cell.mesh.position.y = (cell.position.y - this.sizeY/2) + newY;
+                        
+                        if (Math.abs(newY - targetY) > 0.01) {
+                            requestAnimationFrame(animate);
+                        }
+                    };
+                    animate();
+                }
+                
                 this.renderGrid3D();
                 this.updateUI();
             }
@@ -681,8 +968,13 @@
                 for (let x = 0; x < this.sizeX; x++) {
                     for (let y = 0; y < this.sizeY; y++) {
                         for (let z = 0; z < this.sizeZ; z++) {
-                            if (this.grid[x][y][z].isMine) {
-                                this.grid[x][y][z].isRevealed = true;
+                            const cell = this.grid[x][y][z];
+                            if (cell.isMine) {
+                                cell.isRevealed = true;
+                                if (cell.mesh && this.effectsLevel >= 2) {
+                                    // Explosion effect
+                                    cell.mesh.material = this.materials.explosion;
+                                }
                             }
                         }
                     }
@@ -712,8 +1004,10 @@
 
             startTimer() {
                 this.timerInterval = setInterval(() => {
-                    this.timer++;
-                    this.updateUI();
+                    if (!this.isPaused) {
+                        this.timer++;
+                        this.updateUI();
+                    }
                 }, 1000);
             }
 
@@ -732,22 +1026,69 @@
                 const overlay = document.getElementById('gameOverOverlay');
                 const title = document.getElementById('gameOverTitle');
                 const message = document.getElementById('gameOverMessage');
+                const stats = document.getElementById('gameOverStats');
+                
+                const revealedCells = this.countRevealedCells();
+                const totalSafeCells = this.sizeX * this.sizeY * this.sizeZ - this.totalMines;
+                const progressPercent = Math.round((revealedCells / totalSafeCells) * 100);
                 
                 if (this.gameState === 'won') {
                     title.textContent = '🎉';
-                    message.textContent = `Congratulations! You won in ${this.timer} seconds!`;
+                    message.textContent = `Congratulations! You won!`;
+                    stats.innerHTML = `
+                        <div style="margin: 20px 0; font-size: 14px; color: #ccc;">
+                            <div>⏰ Time: ${this.formatTime(this.timer)}</div>
+                            <div>💣 Mines: ${this.totalMines}</div>
+                            <div>🎯 Accuracy: 100%</div>
+                            <div>📦 Grid: ${this.sizeX}×${this.sizeY}×${this.sizeZ}</div>
+                        </div>
+                    `;
                 } else {
                     title.textContent = '💣';
-                    message.textContent = 'Game Over! Better luck next time.';
+                    message.textContent = 'Game Over!';
+                    stats.innerHTML = `
+                        <div style="margin: 20px 0; font-size: 14px; color: #ccc;">
+                            <div>⏰ Time: ${this.formatTime(this.timer)}</div>
+                            <div>📊 Progress: ${progressPercent}%</div>
+                            <div>💣 Mines: ${this.totalMines}</div>
+                            <div>📦 Grid: ${this.sizeX}×${this.sizeY}×${this.sizeZ}</div>
+                        </div>
+                    `;
                 }
                 
                 overlay.style.display = 'flex';
             }
 
+            formatTime(seconds) {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${mins}:${secs.toString().padStart(2, '0')}`;
+            }
+
+            countRevealedCells() {
+                let count = 0;
+                for (let x = 0; x < this.sizeX; x++) {
+                    for (let y = 0; y < this.sizeY; y++) {
+                        for (let z = 0; z < this.sizeZ; z++) {
+                            if (this.grid[x][y][z].isRevealed && !this.grid[x][y][z].isMine) {
+                                count++;
+                            }
+                        }
+                    }
+                }
+                return count;
+            }
+
             updateUI() {
                 document.getElementById('mineCount').textContent = this.mineCount;
-                document.getElementById('timer').textContent = this.timer;
+                document.getElementById('timer').textContent = this.formatTime(this.timer);
                 document.getElementById('gameMode').textContent = this.flagMode ? 'Flag Mode ON' : 'Click to Reveal';
+                
+                // Progress indicator
+                const revealedCells = this.countRevealedCells();
+                const totalSafeCells = this.sizeX * this.sizeY * this.sizeZ - this.totalMines;
+                const progressPercent = Math.round((revealedCells / totalSafeCells) * 100);
+                document.getElementById('progress').textContent = `Progress: ${progressPercent}%`;
                 
                 const statusEl = document.getElementById('gameStatus');
                 statusEl.className = 'status-indicator';
@@ -762,23 +1103,34 @@
                         statusEl.style.background = 'linear-gradient(45deg, #dc3545, #a71e2a)';
                         break;
                     default:
-                        statusEl.textContent = 'Playing';
-                        statusEl.style.background = 'linear-gradient(45deg, #28a745, #1e7e34)';
+                        statusEl.textContent = this.isPaused ? 'Paused ⏸️' : 'Playing';
+                        statusEl.style.background = this.isPaused ? 
+                            'linear-gradient(45deg, #6c757d, #495057)' : 
+                            'linear-gradient(45deg, #28a745, #1e7e34)';
                 }
                 
                 const flagBtn = document.getElementById('flagModeBtn');
                 flagBtn.className = this.flagMode ? 'btn-danger' : 'btn-warning';
                 flagBtn.textContent = this.flagMode ? '🚩 Flag ON' : '🚩 Flag OFF';
+                
+                const pauseBtn = document.getElementById('pauseBtn');
+                pauseBtn.textContent = this.isPaused ? '▶️ Resume' : '⏸️ Pause';
+                
+                const autoRotateBtn = document.getElementById('autoRotateBtn');
+                autoRotateBtn.className = this.autoRotate ? 'camera-btn btn-success' : 'camera-btn btn-secondary';
+                
+                const wireframeBtn = document.getElementById('wireframeBtn');
+                wireframeBtn.className = this.wireframe ? 'camera-btn btn-warning' : 'camera-btn btn-secondary';
             }
 
             setupEventListeners() {
                 const canvas = document.getElementById('gameCanvas');
                 
-                // Mouse events
+                // Mouse events with improved handling
                 canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
                 canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
                 canvas.addEventListener('mouseup', (e) => this.onMouseUp(e));
-                canvas.addEventListener('wheel', (e) => this.onMouseWheel(e));
+                canvas.addEventListener('wheel', (e) => this.onMouseWheel(e), { passive: false });
                 canvas.addEventListener('contextmenu', (e) => e.preventDefault());
                 
                 // Keyboard events
@@ -797,6 +1149,12 @@
                         this.initializeGame();
                     });
                 });
+
+                // Settings
+                document.getElementById('effectsSlider').addEventListener('input', (e) => {
+                    this.effectsLevel = parseInt(e.target.value);
+                    this.updateGraphics();
+                });
             }
 
             onMouseDown(event) {
@@ -806,27 +1164,29 @@
                     this.isMouseDown = true;
                     this.mouseX = event.clientX;
                     this.mouseY = event.clientY;
-                    
-                    // Check for cell click
                     this.checkCellClick(event);
+                } else if (event.button === 1) { // Middle click
+                    event.preventDefault();
+                    this.checkCellClick(event, false, true);
                 } else if (event.button === 2) { // Right click
                     this.checkCellClick(event, true);
                 }
             }
 
             onMouseMove(event) {
-                if (this.isMouseDown) {
+                if (this.isMouseDown && !this.isPaused) {
                     const deltaX = event.clientX - this.mouseX;
                     const deltaY = event.clientY - this.mouseY;
                     
-                    this.cameraTheta += deltaX * 0.01;
-                    this.cameraPhi = Math.max(0.1, Math.min(Math.PI - 0.1, this.cameraPhi + deltaY * 0.01));
+                    const sensitivity = this.keys.shift ? 0.003 : 0.01;
+                    
+                    this.cameraTheta += deltaX * sensitivity;
+                    this.cameraPhi = Math.max(0.1, Math.min(Math.PI - 0.1, this.cameraPhi + deltaY * sensitivity));
                     
                     this.mouseX = event.clientX;
                     this.mouseY = event.clientY;
                 }
                 
-                // Update hover effect
                 this.updateHover(event);
             }
 
@@ -836,11 +1196,14 @@
 
             onMouseWheel(event) {
                 event.preventDefault();
-                this.cameraDistance *= (1 + event.deltaY * 0.001);
-                this.cameraDistance = Math.max(5, Math.min(200, this.cameraDistance));
+                if (this.isPaused) return;
+                
+                const zoomSpeed = this.keys.shift ? 0.5 : 2.0;
+                this.cameraDistance *= (1 + event.deltaY * 0.001 * zoomSpeed);
+                this.cameraDistance = Math.max(3, Math.min(300, this.cameraDistance));
             }
 
-            checkCellClick(event, isRightClick = false) {
+            checkCellClick(event, isRightClick = false, isMiddleClick = false) {
                 this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
                 this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
                 
@@ -853,19 +1216,18 @@
                     const { x, y, z } = mesh.userData;
                     
                     if (isRightClick) {
-                        // Right click always toggles flag
                         this.toggleFlag(x, y, z);
                     } else {
-                        // Left click handles normal game logic
-                        this.handleCellClick(x, y, z);
+                        this.handleCellClick(x, y, z, isMiddleClick);
                     }
                     
-                    // Update coordinates display
                     document.getElementById('coordinates').textContent = `Position: ${x}, ${y}, ${z}`;
                 }
             }
 
             updateHover(event) {
+                if (this.isPaused) return;
+                
                 this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
                 this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
                 
@@ -875,34 +1237,48 @@
                 
                 // Reset previous hover
                 if (this.hoveredCell && this.hoveredCell !== (intersects.length > 0 ? intersects[0].object : null)) {
-                    const cell = this.hoveredCell.userData.cell;
-                    let material = this.materials.hidden;
-                    
-                    if (cell.isFlagged) {
-                        material = this.materials.flagged;
-                    } else if (cell.isRevealed) {
-                        if (cell.isMine) {
-                            material = this.materials.mine;
-                        } else if (cell.adjacentMines > 0) {
-                            material = this.numberMaterials[cell.adjacentMines];
-                        } else {
-                            material = this.materials.revealed;
-                        }
-                    }
-                    
-                    this.hoveredCell.material = material;
+                    this.resetCellMaterial(this.hoveredCell);
                 }
                 
                 // Set new hover
                 if (intersects.length > 0 && !intersects[0].object.userData.cell.isRevealed) {
                     this.hoveredCell = intersects[0].object;
-                    this.hoveredCell.material = this.materials.hover;
+                    this.hoveredCell.material = this.wireframe ? 
+                        Object.assign(this.materials.hover.clone(), { wireframe: true }) : 
+                        this.materials.hover;
                     
                     const { x, y, z } = this.hoveredCell.userData;
                     document.getElementById('coordinates').textContent = `Position: ${x}, ${y}, ${z}`;
+                    
+                    // Show adjacent mine count for revealed cells
+                    const cell = this.grid[x][y][z];
+                    if (cell.isRevealed && cell.adjacentMines > 0) {
+                        // Could add tooltip or info display here
+                    }
                 } else {
                     this.hoveredCell = null;
                 }
+            }
+
+            resetCellMaterial(mesh) {
+                const cell = mesh.userData.cell;
+                let material = this.materials.hidden;
+                
+                if (cell.isFlagged) {
+                    material = this.materials.flagged;
+                } else if (cell.isRevealed) {
+                    if (cell.isMine) {
+                        material = this.materials.mine;
+                    } else if (cell.adjacentMines > 0) {
+                        material = this.numberMaterials[cell.adjacentMines];
+                    } else {
+                        material = this.materials.revealed;
+                    }
+                }
+                
+                mesh.material = this.wireframe ? 
+                    Object.assign(material.clone(), { wireframe: true }) : 
+                    material;
             }
 
             onKeyDown(event) {
@@ -911,12 +1287,33 @@
                     case 'a': this.keys.a = true; break;
                     case 's': this.keys.s = true; break;
                     case 'd': this.keys.d = true; break;
+                    case 'shift': this.keys.shift = true; break;
+                    case 'control': this.keys.ctrl = true; break;
                     case ' ':
                         event.preventDefault();
                         this.toggleFlagMode();
                         break;
+                    case 'p':
+                        event.preventDefault();
+                        this.togglePause();
+                        break;
                     case 'r':
-                        this.initializeGame();
+                        if (this.keys.ctrl) {
+                            event.preventDefault();
+                            this.initializeGame();
+                        }
+                        break;
+                    case 'f':
+                        if (this.keys.ctrl) {
+                            event.preventDefault();
+                            this.toggleFullscreen();
+                        }
+                        break;
+                    case 'g':
+                        this.toggleGrid();
+                        break;
+                    case 'h':
+                        this.toggleInstructions();
                         break;
                 }
             }
@@ -927,6 +1324,8 @@
                     case 'a': this.keys.a = false; break;
                     case 's': this.keys.s = false; break;
                     case 'd': this.keys.d = false; break;
+                    case 'shift': this.keys.shift = false; break;
+                    case 'control': this.keys.ctrl = false; break;
                 }
             }
 
@@ -937,67 +1336,157 @@
             }
 
             updateCamera() {
-                // WASD movement
-                const moveSpeed = 0.5;
-                if (this.keys.w) this.cameraDistance = Math.max(5, this.cameraDistance - moveSpeed);
-                if (this.keys.s) this.cameraDistance = Math.min(200, this.cameraDistance + moveSpeed);
-                if (this.keys.a) this.cameraTheta -= 0.02;
-                if (this.keys.d) this.cameraTheta += 0.02;
+                if (this.isPaused && !this.autoRotate) return;
+                
+                // Enhanced WASD movement
+                const moveSpeed = this.keys.shift ? 1.0 : 0.5;
+                const rotateSpeed = this.keys.shift ? 0.01 : 0.02;
+                
+                if (this.keys.w) this.cameraDistance = Math.max(3, this.cameraDistance - moveSpeed);
+                if (this.keys.s) this.cameraDistance = Math.min(300, this.cameraDistance + moveSpeed);
+                if (this.keys.a) this.cameraTheta -= rotateSpeed;
+                if (this.keys.d) this.cameraTheta += rotateSpeed;
                 
                 // Auto rotate
                 if (this.autoRotate) {
                     this.cameraTheta += 0.005;
                 }
                 
-                // Update camera position
-                this.camera.position.x = this.cameraDistance * Math.sin(this.cameraPhi) * Math.cos(this.cameraTheta);
-                this.camera.position.y = this.cameraDistance * Math.cos(this.cameraPhi);
-                this.camera.position.z = this.cameraDistance * Math.sin(this.cameraPhi) * Math.sin(this.cameraTheta);
+                // Smooth camera movement
+                const targetX = this.cameraDistance * Math.sin(this.cameraPhi) * Math.cos(this.cameraTheta);
+                const targetY = this.cameraDistance * Math.cos(this.cameraPhi);
+                const targetZ = this.cameraDistance * Math.sin(this.cameraPhi) * Math.sin(this.cameraTheta);
                 
-                this.camera.lookAt(0, 0, 0);
+                this.camera.position.x = THREE.MathUtils.lerp(this.camera.position.x, targetX, 0.1);
+                this.camera.position.y = THREE.MathUtils.lerp(this.camera.position.y, targetY, 0.1);
+                this.camera.position.z = THREE.MathUtils.lerp(this.camera.position.z, targetZ, 0.1);
+                
+                this.camera.lookAt(this.cameraTarget);
+            }
+
+            updatePerformance() {
+                this.frameCount++;
+                const now = performance.now();
+                
+                if (now - this.lastTime >= 1000) {
+                    this.fps = Math.round((this.frameCount * 1000) / (now - this.lastTime));
+                    this.frameCount = 0;
+                    this.lastTime = now;
+                    
+                    const totalCells = this.sizeX * this.sizeY * this.sizeZ;
+                    document.getElementById('performanceInfo').innerHTML = `
+                        FPS: ${this.fps}<br>
+                        Cells: ${totalCells}<br>
+                        Renderer: WebGL
+                    `;
+                }
             }
 
             animate() {
                 requestAnimationFrame(() => this.animate());
                 
                 this.updateCamera();
+                this.updatePerformance();
                 this.renderer.render(this.scene, this.camera);
             }
 
+            // Public methods for UI controls
             toggleFlagMode() {
                 this.flagMode = !this.flagMode;
                 this.updateUI();
             }
 
+            togglePause() {
+                this.isPaused = !this.isPaused;
+                this.updateUI();
+            }
+
             resetCamera() {
-                this.cameraDistance = 50;
-                this.cameraTheta = 0;
-                this.cameraPhi = Math.PI / 4;
+                const config = this.difficulties[this.currentDifficulty];
+                const maxSize = Math.max(config.x, config.y, config.z);
+                
+                this.cameraDistance = maxSize * 1.5 + 20;
+                this.cameraTheta = Math.PI / 4;
+                this.cameraPhi = Math.PI / 3;
                 this.autoRotate = false;
+                this.cameraTarget.set(0, 0, 0);
             }
 
             toggleAutoRotate() {
                 this.autoRotate = !this.autoRotate;
+                this.updateUI();
             }
 
             switchView() {
                 if (this.currentDifficulty === 'expert') {
-                    // For 2D expert mode, switch between top and angled view
-                    if (this.cameraPhi < 0.2) {
-                        this.cameraPhi = Math.PI / 4;
-                        this.cameraDistance = 50;
+                    // For 2D expert mode, switch between views
+                    if (this.cameraPhi < 0.3) {
+                        this.cameraPhi = Math.PI / 3;
+                        this.cameraDistance = 60;
                     } else {
                         this.cameraPhi = 0.1;
-                        this.cameraDistance = 30;
+                        this.cameraDistance = 35;
                     }
                 } else {
                     // For 3D modes, cycle through preset views
-                    if (this.cameraPhi < Math.PI / 3) {
-                        this.cameraPhi = Math.PI / 2;
-                    } else {
-                        this.cameraPhi = Math.PI / 4;
-                    }
+                    const views = [
+                        { phi: Math.PI / 4, theta: 0, distance: 50 },
+                        { phi: Math.PI / 2, theta: 0, distance: 40 },
+                        { phi: Math.PI / 6, theta: Math.PI / 4, distance: 60 }
+                    ];
+                    
+                    // Find closest view and switch to next
+                    let closestIndex = 0;
+                    let closestDistance = Infinity;
+                    
+                    views.forEach((view, index) => {
+                        const dist = Math.abs(view.phi - this.cameraPhi) + Math.abs(view.theta - this.cameraTheta);
+                        if (dist < closestDistance) {
+                            closestDistance = dist;
+                            closestIndex = index;
+                        }
+                    });
+                    
+                    const nextView = views[(closestIndex + 1) % views.length];
+                    this.cameraPhi = nextView.phi;
+                    this.cameraTheta = nextView.theta;
+                    this.cameraDistance = nextView.distance;
                 }
+            }
+
+            toggleWireframe() {
+                this.wireframe = !this.wireframe;
+                this.renderGrid3D();
+                this.updateUI();
+            }
+
+            toggleGrid() {
+                this.showGrid = !this.showGrid;
+                this.createGridHelper();
+            }
+
+            toggleShadows() {
+                this.enableShadows = !this.enableShadows;
+                this.renderer.shadowMap.enabled = this.enableShadows;
+                this.setupLighting();
+                this.renderGrid3D();
+            }
+
+            updateGraphics() {
+                this.setupLighting();
+                this.setupMaterials();
+                if (this.effectsLevel >= 1) {
+                    this.scene.fog = new THREE.Fog(0x0f0f23, 10, 100);
+                } else {
+                    this.scene.fog = null;
+                }
+                this.renderer.antialias = this.effectsLevel >= 2;
+                this.renderGrid3D();
+            }
+
+            toggleInstructions() {
+                const instructions = document.querySelector('.instructions');
+                instructions.style.opacity = instructions.style.opacity === '0' ? '1' : '0';
             }
         }
 
@@ -1010,6 +1499,10 @@
 
         function toggleFlagMode() {
             game.toggleFlagMode();
+        }
+
+        function togglePause() {
+            game.togglePause();
         }
 
         function hideGameOver() {
@@ -1037,6 +1530,63 @@
         function switchView() {
             game.switchView();
         }
+
+        function toggleWireframe() {
+            game.toggleWireframe();
+        }
+
+        function toggleGrid() {
+            game.toggleGrid();
+            document.getElementById('gridToggle').checked = game.showGrid;
+        }
+
+        function toggleShadows() {
+            game.toggleShadows();
+            document.getElementById('shadowToggle').checked = game.enableShadows;
+        }
+
+        function updateGraphics() {
+            const level = parseInt(document.getElementById('effectsSlider').value);
+            game.effectsLevel = level;
+            game.updateGraphics();
+        }
+
+        // Initialize settings based on game state
+        window.addEventListener('load', () => {
+            document.getElementById('effectsSlider').value = game.effectsLevel;
+            document.getElementById('gridToggle').checked = game.showGrid;
+            document.getElementById('shadowToggle').checked = game.enableShadows;
+        });
+
+        // Add some helpful keyboard shortcuts info
+        console.log(`
+🎮 3D Minesweeper Pro - Keyboard Shortcuts:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 Game Controls:
+   Space     - Toggle flag mode
+   P         - Pause/Resume game
+   R         - Restart game
+   Ctrl+R    - Quick restart
+   Ctrl+F    - Toggle fullscreen
+
+📷 Camera Controls:
+   WASD      - Move camera
+   Shift+Key - Fast movement/rotation
+   Mouse     - Rotate view
+   Scroll    - Zoom in/out
+
+🎨 Display Options:
+   G         - Toggle grid helper
+   H         - Toggle instructions
+
+🖱️  Mouse Controls:
+   Left Click    - Reveal cell
+   Right Click   - Flag cell  
+   Middle Click  - Auto-reveal adjacent (when numbers match flags)
+   Shift+Mouse   - Precision camera control
+
+Happy mining! 💣
+        `);
     </script>
 </body>
 </html>
