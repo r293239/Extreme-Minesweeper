@@ -368,6 +368,8 @@
             <button class="camera-btn btn-secondary" onclick="toggleAutoRotate()" id="autoRotateBtn">🔄 Auto Rotate</button>
             <button class="camera-btn btn-secondary" onclick="switchView()">👁️ Switch View</button>
             <button class="camera-btn btn-secondary" onclick="toggleWireframe()" id="wireframeBtn">🔲 Wireframe</button>
+            <button class="camera-btn btn-secondary" onclick="toggleNumbers()" id="numbersBtn">🔢 Numbers</button>
+        </div>wireframeBtn">🔲 Wireframe</button>
         </div>
 
         <div class="settings-panel">
@@ -384,15 +386,24 @@
                 <span>Shadows:</span>
                 <input type="checkbox" id="shadowToggle" checked onchange="toggleShadows()">
             </div>
+            <div class="setting-item">
+                <span>Numbers:</span>
+                <input type="checkbox" id="numbersToggle" checked onchange="toggleNumbers()">
+            </div>
         </div>
 
         <div class="instructions">
-            <h3>3D Controls</h3>
+            <h3>Controls</h3>
             <ul>
-                <li>Mouse: Rotate camera</li>
-                <li>Scroll: Zoom in/out</li>
-                <li>Click: Reveal/Flag cell</li>
-                <li>Right-click: Quick flag</li>
+                <li id="desktopControls">Mouse: Rotate camera</li>
+                <li id="desktopControls2">Scroll: Zoom in/out</li>
+                <li id="touchControls" style="display:none">Tap: Reveal cell</li>
+                <li id="touchControls2" style="display:none">Long press: Flag cell</li>
+                <li id="touchControls3" style="display:none">Swipe right: Toggle flag mode</li>
+                <li id="touchControls4" style="display:none">Swipe up: Switch view</li>
+                <li id="touchControls5" style="display:none">Pinch: Zoom</li>
+                <li>Click/Tap: Reveal cell</li>
+                <li>Right-click/Long press: Flag</li>
                 <li>WASD: Move camera</li>
                 <li>Space: Toggle flag mode</li>
                 <li>P: Pause game</li>
@@ -436,6 +447,25 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
+        // Add CSS for number display
+        const numberStyles = document.createElement('style');
+        numberStyles.textContent = `
+            .cell-number {
+                position: absolute;
+                pointer-events: none;
+                font-family: 'Courier New', monospace;
+                font-weight: bold;
+                font-size: 12px;
+                color: white;
+                text-shadow: 0 0 3px rgba(0,0,0,0.8);
+                z-index: 1;
+                user-select: none;
+                transition: all 0.3s ease;
+            }
+        `;
+        document.head.appendChild(numberStyles);
+    </script>
+    <script>
         class Minesweeper3D {
             constructor() {
                 this.difficulties = {
@@ -457,13 +487,37 @@
                 this.autoRotate = false;
                 this.wireframe = false;
                 this.showGrid = true;
+                this.showNumbers = true;
                 this.effectsLevel = 2;
                 this.enableShadows = true;
+                
+                // Touch controls
+                this.isTouchDevice = 'ontouchstart' in window;
+                this.touchStartX = 0;
+                this.touchStartY = 0;
+                this.touchStartTime = 0;
+                this.isSwipe = false;
+                this.swipeThreshold = 50;
+                this.tapTimeout = null;
+                this.longPressTimeout = null;
+                this.isLongPress = false;
                 
                 // Performance tracking
                 this.frameCount = 0;
                 this.lastTime = performance.now();
                 this.fps = 60;
+                
+                // Number display
+                this.numberElements = new Map();
+                this.numberContainer = document.createElement('div');
+                this.numberContainer.style.position = 'absolute';
+                this.numberContainer.style.top = '0';
+                this.numberContainer.style.left = '0';
+                this.numberContainer.style.width = '100%';
+                this.numberContainer.style.height = '100%';
+                this.numberContainer.style.pointerEvents = 'none';
+                this.numberContainer.style.zIndex = '50';
+                document.body.appendChild(this.numberContainer);
                 
                 this.initThree();
                 this.initializeGame();
@@ -741,7 +795,7 @@
             }
 
             renderGrid3D() {
-                // Clear existing meshes
+                // Clear existing meshes and numbers
                 const cellsToRemove = [];
                 this.scene.traverse((child) => {
                     if (child.userData.isCell) {
@@ -749,6 +803,10 @@
                     }
                 });
                 cellsToRemove.forEach(cell => this.scene.remove(cell));
+                
+                // Clear number elements
+                this.numberContainer.innerHTML = '';
+                this.numberElements.clear();
                 
                 // Create new meshes with optimized geometry
                 const geometries = {
@@ -804,9 +862,62 @@
                             
                             this.scene.add(mesh);
                             cell.mesh = mesh;
+                            
+                            // Create number display for revealed cells
+                            if (cell.isRevealed && !cell.isMine && cell.adjacentMines > 0 && this.showNumbers) {
+                                this.createNumberElement(cell, x, y, z);
+                            }
                         }
                     }
                 }
+                
+                // Update number positions
+                this.updateNumberPositions();
+            }
+
+            createNumberElement(cell, x, y, z) {
+                const numberEl = document.createElement('div');
+                numberEl.className = 'cell-number';
+                numberEl.textContent = cell.adjacentMines;
+                numberEl.style.fontSize = this.sizeX > 20 ? '10px' : '14px';
+                
+                // Color coding for numbers
+                const colors = [
+                    '', '#2266ff', '#22aa22', '#ff2222', '#8822aa', 
+                    '#aa2222', '#22aaaa', '#222222', '#888888'
+                ];
+                numberEl.style.color = colors[cell.adjacentMines] || '#ffffff';
+                
+                this.numberContainer.appendChild(numberEl);
+                this.numberElements.set(`${x}-${y}-${z}`, numberEl);
+            }
+
+            updateNumberPositions() {
+                if (!this.showNumbers) return;
+                
+                this.numberElements.forEach((element, key) => {
+                    const [x, y, z] = key.split('-').map(Number);
+                    const cell = this.grid[x][y][z];
+                    
+                    if (cell.mesh && cell.isRevealed) {
+                        const vector = new THREE.Vector3();
+                        vector.setFromMatrixPosition(cell.mesh.matrixWorld);
+                        vector.project(this.camera);
+                        
+                        const screenX = (vector.x * 0.5 + 0.5) * window.innerWidth;
+                        const screenY = (vector.y * -0.5 + 0.5) * window.innerHeight;
+                        
+                        // Check if the cell is visible (not behind camera)
+                        if (vector.z < 1) {
+                            element.style.left = screenX + 'px';
+                            element.style.top = screenY + 'px';
+                            element.style.opacity = '1';
+                            element.style.transform = 'translate(-50%, -50%)';
+                        } else {
+                            element.style.opacity = '0';
+                        }
+                    }
+                });
             }
 
             handleCellClick(x, y, z, isMiddleClick = false) {
@@ -1126,12 +1237,19 @@
             setupEventListeners() {
                 const canvas = document.getElementById('gameCanvas');
                 
-                // Mouse events with improved handling
-                canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
-                canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
-                canvas.addEventListener('mouseup', (e) => this.onMouseUp(e));
-                canvas.addEventListener('wheel', (e) => this.onMouseWheel(e), { passive: false });
-                canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+                if (this.isTouchDevice) {
+                    // Touch events for mobile
+                    canvas.addEventListener('touchstart', (e) => this.onTouchStart(e), { passive: false });
+                    canvas.addEventListener('touchmove', (e) => this.onTouchMove(e), { passive: false });
+                    canvas.addEventListener('touchend', (e) => this.onTouchEnd(e), { passive: false });
+                } else {
+                    // Mouse events for desktop
+                    canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
+                    canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
+                    canvas.addEventListener('mouseup', (e) => this.onMouseUp(e));
+                    canvas.addEventListener('wheel', (e) => this.onMouseWheel(e), { passive: false });
+                    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+                }
                 
                 // Keyboard events
                 document.addEventListener('keydown', (e) => this.onKeyDown(e));
@@ -1155,6 +1273,126 @@
                     this.effectsLevel = parseInt(e.target.value);
                     this.updateGraphics();
                 });
+                
+                // Prevent context menu on touch devices
+                if (this.isTouchDevice) {
+                    document.addEventListener('contextmenu', (e) => e.preventDefault());
+                }
+            }
+
+            // Touch event handlers
+            onTouchStart(event) {
+                event.preventDefault();
+                
+                const touch = event.touches[0];
+                this.touchStartX = touch.clientX;
+                this.touchStartY = touch.clientY;
+                this.touchStartTime = Date.now();
+                this.isSwipe = false;
+                this.isLongPress = false;
+                
+                // Set up long press detection
+                this.longPressTimeout = setTimeout(() => {
+                    this.isLongPress = true;
+                    // Trigger flag mode on long press
+                    this.checkCellClick(event, true);
+                    // Haptic feedback if available
+                    if (navigator.vibrate) navigator.vibrate(50);
+                }, 500);
+                
+                // Store initial camera position for rotation
+                this.initialCameraTheta = this.cameraTheta;
+                this.initialCameraPhi = this.cameraPhi;
+            }
+
+            onTouchMove(event) {
+                event.preventDefault();
+                
+                if (this.isPaused) return;
+                
+                const touch = event.touches[0];
+                const deltaX = touch.clientX - this.touchStartX;
+                const deltaY = touch.clientY - this.touchStartY;
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                
+                // If movement is significant, it's a swipe/drag
+                if (distance > 10) {
+                    this.isSwipe = true;
+                    clearTimeout(this.longPressTimeout);
+                    
+                    // Multi-touch pinch zoom
+                    if (event.touches.length === 2) {
+                        const touch1 = event.touches[0];
+                        const touch2 = event.touches[1];
+                        const currentDistance = Math.sqrt(
+                            Math.pow(touch2.clientX - touch1.clientX, 2) +
+                            Math.pow(touch2.clientY - touch1.clientY, 2)
+                        );
+                        
+                        if (this.lastPinchDistance) {
+                            const scale = currentDistance / this.lastPinchDistance;
+                            this.cameraDistance /= scale;
+                            this.cameraDistance = Math.max(3, Math.min(300, this.cameraDistance));
+                        }
+                        this.lastPinchDistance = currentDistance;
+                    } else {
+                        // Single touch - rotate camera
+                        const sensitivity = 0.008;
+                        this.cameraTheta = this.initialCameraTheta + deltaX * sensitivity;
+                        this.cameraPhi = Math.max(0.1, Math.min(Math.PI - 0.1, 
+                            this.initialCameraPhi + deltaY * sensitivity));
+                    }
+                }
+            }
+
+            onTouchEnd(event) {
+                event.preventDefault();
+                
+                clearTimeout(this.longPressTimeout);
+                this.lastPinchDistance = null;
+                
+                const touch = event.changedTouches[0];
+                const deltaX = touch.clientX - this.touchStartX;
+                const deltaY = touch.clientY - this.touchStartY;
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                const duration = Date.now() - this.touchStartTime;
+                
+                // Determine gesture type
+                if (!this.isLongPress && !this.isSwipe && duration < 300 && distance < 20) {
+                    // Simple tap
+                    this.checkCellClick(event);
+                } else if (this.isSwipe && distance > this.swipeThreshold && duration < 500) {
+                    // Swipe gesture
+                    this.handleSwipe(deltaX, deltaY);
+                }
+            }
+
+            handleSwipe(deltaX, deltaY) {
+                const absX = Math.abs(deltaX);
+                const absY = Math.abs(deltaY);
+                
+                if (absX > absY) {
+                    // Horizontal swipe
+                    if (deltaX > 0) {
+                        // Swipe right - toggle flag mode
+                        this.toggleFlagMode();
+                    } else {
+                        // Swipe left - reset camera
+                        this.resetCamera();
+                    }
+                } else {
+                    // Vertical swipe
+                    if (deltaY > 0) {
+                        // Swipe down - pause game
+                        this.togglePause();
+                    } else {
+                        // Swipe up - switch view
+                        this.switchView();
+                    }
+                }
+                
+                // Provide visual feedback
+                if (navigator.vibrate) navigator.vibrate(30);
             }
 
             onMouseDown(event) {
@@ -1204,8 +1442,19 @@
             }
 
             checkCellClick(event, isRightClick = false, isMiddleClick = false) {
-                this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-                this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+                // Get touch or mouse position
+                let clientX, clientY;
+                if (event.touches) {
+                    const touch = event.touches[0] || event.changedTouches[0];
+                    clientX = touch.clientX;
+                    clientY = touch.clientY;
+                } else {
+                    clientX = event.clientX;
+                    clientY = event.clientY;
+                }
+                
+                this.mouse.x = (clientX / window.innerWidth) * 2 - 1;
+                this.mouse.y = -(clientY / window.innerHeight) * 2 + 1;
                 
                 this.raycaster.setFromCamera(this.mouse, this.camera);
                 
@@ -1226,7 +1475,7 @@
             }
 
             updateHover(event) {
-                if (this.isPaused) return;
+                if (this.isPaused || this.isTouchDevice) return;
                 
                 this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
                 this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -1386,6 +1635,7 @@
                 requestAnimationFrame(() => this.animate());
                 
                 this.updateCamera();
+                this.updateNumberPositions(); // Update number display positions
                 this.updatePerformance();
                 this.renderer.render(this.scene, this.camera);
             }
@@ -1394,6 +1644,21 @@
             toggleFlagMode() {
                 this.flagMode = !this.flagMode;
                 this.updateUI();
+                
+                // Show visual feedback for touch devices
+                if (this.isTouchDevice && navigator.vibrate) {
+                    navigator.vibrate(this.flagMode ? 100 : 50);
+                }
+            }
+
+            toggleNumbers() {
+                this.showNumbers = !this.showNumbers;
+                if (this.showNumbers) {
+                    this.renderGrid3D(); // Recreate number elements
+                } else {
+                    this.numberContainer.innerHTML = '';
+                    this.numberElements.clear();
+                }
             }
 
             togglePause() {
