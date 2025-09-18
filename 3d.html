@@ -1,4 +1,128 @@
-<!DOCTYPE html>
+toggleNumbers() {
+                this.showNumbers = !this.showNumbers;
+                this.renderGrid3D(); // Re-render to show/hide numbers
+            }
+
+            toggleGrid() {
+                this.showGrid = !this.showGrid;
+                this.createGridHelper();
+            }
+
+            updateGraphics() {
+                this.setupLighting();
+                this.setupMaterials();
+                if (this.effectsLevel >= 1) {
+                    this.scene.fog = new THREE.Fog(0x0f0f23, 10, 100);
+                } else {
+                    this.scene.fog = null;
+                }
+                this.renderer.antialias = this.effectsLevel >= 2;
+                this.renderGrid3D();
+            }
+
+            toggleInstructions() {
+                const instructions = document.querySelector('.instructions');
+                if (instructions) {
+                    instructions.style.opacity = instructions.style.opacity === '0' ? '1' : '0';
+                }
+            }
+        }
+
+        // Global functions
+        let game = new Minesweeper3D();
+
+        function resetGame() {
+            game.initializeGame();
+        }
+
+        function toggleFlagMode() {
+            game.toggleFlagMode();
+        }
+
+        function togglePause() {
+            game.togglePause();
+        }
+
+        function hideGameOver() {
+            document.getElementById('gameOverOverlay').style.display = 'none';
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log('Fullscreen not supported');
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        function resetCamera() {
+            game.resetCamera();
+        }
+
+        function toggleAutoRotate() {
+            game.toggleAutoRotate();
+        }
+
+        function switchView() {
+            game.switchView();
+        }
+
+        function toggleGrid() {
+            game.toggleGrid();
+        }
+
+        function toggleShadows() {
+            game.toggleShadows();
+        }
+
+        function updateGraphics() {
+            const level = parseInt(document.getElementById('effectsSlider').value);
+            game.effectsLevel = level;
+            game.updateGraphics();
+        }
+
+        // Initialize settings based on game state
+        window.addEventListener('load', () => {
+            // Show appropriate controls based on device
+            if (game.isTouchDevice) {
+                // Add mobile-specific styling
+                document.body.classList.add('touch-device');
+            }
+        });
+
+        // Add some helpful shortcuts info
+        console.log(`
+🎮 Enhanced 3D Minesweeper Pro - Clean Interface:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 Game Controls:
+   Space     - Toggle flag mode
+   R         - New game
+   Mouse/Touch - Interact with cells
+
+📷 Camera Controls:
+   WASD      - Move camera
+   Mouse/Swipe - Rotate view
+   Scroll/Pinch - Zoom
+
+📱 Touch Controls:
+   Tap           - Reveal cell
+   Long Press    - Flag cell
+   Swipe Right   - Toggle flag mode
+   Swipe Up      - Switch view
+
+✨ Features:
+   🔢 Numbers engraved on blocks
+   📱 Touch/swipe support
+   🎯 Clean dropdown menus
+   📳 Haptic feedback
+
+Happy mining! 💣
+        `);
+    </script>
+</body>
+</html><!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -9,6 +133,43 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+        @media (max-width: 768px) {
+            .game-hud {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .instructions, .settings-panel {
+                display: none;
+            }
+            
+            .difficulty-selector {
+                position: relative;
+                top: auto;
+                left: auto;
+                flex-direction: row;
+                gap: 5px;
+                overflow-x: auto;
+                padding: 10px;
+            }
+            
+            .camera-controls {
+                flex-direction: row;
+                right: 10px;
+                bottom: 100px;
+                top: auto;
+                gap: 5px;
+            }
+
+            .performance-info {
+                display: none;
+            }
+
+            .camera-btn {
+                padding: 6px 8px;
+                font-size: 10px;
+                min-width: 60px;
+            }
         }
 
         body {
@@ -304,26 +465,59 @@
             cursor: pointer;
         }
 
-        @media (max-width: 768px) {
-            .game-hud {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .instructions, .settings-panel {
-                display: none;
-            }
-            
-            .camera-controls {
-                flex-direction: row;
-                right: 10px;
-                bottom: 100px;
-                top: auto;
-            }
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
 
-            .performance-info {
-                display: none;
-            }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            border-radius: 8px;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .dropdown-content button {
+            background: none;
+            border: none;
+            color: white;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            width: 100%;
+            text-align: left;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 0;
+        }
+
+        .dropdown-content button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: none;
+            box-shadow: none;
+        }
+
+        .dropdown-content button:first-child {
+            border-radius: 8px 8px 0 0;
+        }
+
+        .dropdown-content button:last-child {
+            border-radius: 0 0 8px 8px;
+        }
+
+        .menu-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
         }
     </style>
 </head>
@@ -340,11 +534,20 @@
             </div>
 
             <div class="hud-section">
-                <div class="controls">
-                    <button class="btn-primary" onclick="resetGame()">🔄 Restart</button>
+                <div class="menu-section">
+                    <button class="btn-primary" onclick="resetGame()">🔄 New Game</button>
                     <button class="btn-warning" id="flagModeBtn" onclick="toggleFlagMode()">🚩 Flag Mode</button>
-                    <button class="btn-success" onclick="toggleFullscreen()">⛶ Fullscreen</button>
-                    <button class="btn-secondary" id="pauseBtn" onclick="togglePause()">⏸️ Pause</button>
+                    
+                    <div class="dropdown">
+                        <button class="btn-secondary">⚙️ Settings</button>
+                        <div class="dropdown-content">
+                            <button onclick="toggleGrid()">📏 Toggle Grid</button>
+                            <button onclick="toggleAutoRotate()">🔄 Auto Rotate</button>
+                            <button onclick="resetCamera()">📷 Reset Camera</button>
+                            <button onclick="switchView()">👁️ Switch View</button>
+                            <button onclick="toggleFullscreen()">⛶ Fullscreen</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -507,18 +710,6 @@
                 this.lastTime = performance.now();
                 this.fps = 60;
                 
-                // Number display
-                this.numberElements = new Map();
-                this.numberContainer = document.createElement('div');
-                this.numberContainer.style.position = 'absolute';
-                this.numberContainer.style.top = '0';
-                this.numberContainer.style.left = '0';
-                this.numberContainer.style.width = '100%';
-                this.numberContainer.style.height = '100%';
-                this.numberContainer.style.pointerEvents = 'none';
-                this.numberContainer.style.zIndex = '50';
-                document.body.appendChild(this.numberContainer);
-                
                 this.initThree();
                 this.initializeGame();
                 this.setupEventListeners();
@@ -638,7 +829,7 @@
                     })
                 };
                 
-                // Enhanced number materials with better colors and effects
+                // Enhanced number materials with better colors
                 this.numberMaterials = [
                     null, // 0
                     new THREE.MeshPhongMaterial({ color: 0x2266ff, shininess: 20 }), // 1 - blue
@@ -650,6 +841,9 @@
                     new THREE.MeshPhongMaterial({ color: 0x222222, shininess: 5 }),  // 7 - black
                     new THREE.MeshPhongMaterial({ color: 0x888888, shininess: 10 })  // 8 - gray
                 ];
+
+                // Create font loader for 3D text
+                this.fontLoader = new THREE.FontLoader();
             }
 
             createGridHelper() {
@@ -795,26 +989,17 @@
             }
 
             renderGrid3D() {
-                // Clear existing meshes and numbers
+                // Clear existing meshes
                 const cellsToRemove = [];
                 this.scene.traverse((child) => {
-                    if (child.userData.isCell) {
+                    if (child.userData.isCell || child.userData.isNumber) {
                         cellsToRemove.push(child);
                     }
                 });
                 cellsToRemove.forEach(cell => this.scene.remove(cell));
                 
-                // Clear number elements
-                this.numberContainer.innerHTML = '';
-                this.numberElements.clear();
-                
                 // Create new meshes with optimized geometry
-                const geometries = {
-                    normal: new THREE.BoxGeometry(0.8, 0.8, 0.8),
-                    rounded: new THREE.BoxGeometry(0.8, 0.8, 0.8, 2, 2, 2)
-                };
-                
-                const geometry = this.effectsLevel >= 2 ? geometries.rounded : geometries.normal;
+                const geometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
                 const spacing = 1;
                 
                 for (let x = 0; x < this.sizeX; x++) {
@@ -833,12 +1018,6 @@
                                 } else {
                                     material = this.materials.revealed;
                                 }
-                            }
-                            
-                            // Apply wireframe if enabled
-                            if (this.wireframe) {
-                                material = material.clone();
-                                material.wireframe = true;
                             }
                             
                             const mesh = new THREE.Mesh(geometry, material);
@@ -863,61 +1042,75 @@
                             this.scene.add(mesh);
                             cell.mesh = mesh;
                             
-                            // Create number display for revealed cells
-                            if (cell.isRevealed && !cell.isMine && cell.adjacentMines > 0 && this.showNumbers) {
-                                this.createNumberElement(cell, x, y, z);
+                            // Add engraved number on revealed cells with adjacent mines
+                            if (cell.isRevealed && !cell.isMine && cell.adjacentMines > 0) {
+                                this.createEngravedNumber(cell, x, y, z);
                             }
                         }
                     }
                 }
-                
-                // Update number positions
-                this.updateNumberPositions();
             }
 
-            createNumberElement(cell, x, y, z) {
-                const numberEl = document.createElement('div');
-                numberEl.className = 'cell-number';
-                numberEl.textContent = cell.adjacentMines;
-                numberEl.style.fontSize = this.sizeX > 20 ? '10px' : '14px';
+            createEngravedNumber(cell, x, y, z) {
+                // Create a simple geometry for the number using a plane
+                const numberGeometry = new THREE.PlaneGeometry(0.4, 0.4);
                 
-                // Color coding for numbers
+                // Create canvas for the number texture
+                const canvas = document.createElement('canvas');
+                const size = 64;
+                canvas.width = size;
+                canvas.height = size;
+                const context = canvas.getContext('2d');
+                
+                // Draw number on canvas
+                context.fillStyle = '#ffffff';
+                context.fillRect(0, 0, size, size);
+                
+                // Add subtle shadow/engraved effect
+                context.fillStyle = '#dddddd';
+                context.fillRect(0, 0, size, size);
+                
+                // Draw the number
+                context.fillStyle = this.getNumberColor(cell.adjacentMines);
+                context.font = 'bold 48px Arial';
+                context.textAlign = 'center';
+                context.textBaseline = 'middle';
+                context.fillText(cell.adjacentMines.toString(), size/2, size/2);
+                
+                // Add subtle shadow for engraved effect
+                context.globalCompositeOperation = 'multiply';
+                context.fillStyle = '#aaaaaa';
+                context.fillText(cell.adjacentMines.toString(), size/2 + 1, size/2 + 1);
+                
+                // Create texture from canvas
+                const texture = new THREE.CanvasTexture(canvas);
+                const numberMaterial = new THREE.MeshBasicMaterial({ 
+                    map: texture,
+                    transparent: true,
+                    alphaTest: 0.5
+                });
+                
+                const numberMesh = new THREE.Mesh(numberGeometry, numberMaterial);
+                
+                // Position the number on the front face of the cube
+                const cellPosition = cell.mesh.position.clone();
+                numberMesh.position.copy(cellPosition);
+                numberMesh.position.z += 0.41; // Slightly in front of the cube face
+                
+                numberMesh.userData = {
+                    isNumber: true,
+                    parentCell: { x, y, z }
+                };
+                
+                this.scene.add(numberMesh);
+            }
+
+            getNumberColor(number) {
                 const colors = [
-                    '', '#2266ff', '#22aa22', '#ff2222', '#8822aa', 
+                    '#ffffff', '#2266ff', '#22aa22', '#ff2222', '#8822aa', 
                     '#aa2222', '#22aaaa', '#222222', '#888888'
                 ];
-                numberEl.style.color = colors[cell.adjacentMines] || '#ffffff';
-                
-                this.numberContainer.appendChild(numberEl);
-                this.numberElements.set(`${x}-${y}-${z}`, numberEl);
-            }
-
-            updateNumberPositions() {
-                if (!this.showNumbers) return;
-                
-                this.numberElements.forEach((element, key) => {
-                    const [x, y, z] = key.split('-').map(Number);
-                    const cell = this.grid[x][y][z];
-                    
-                    if (cell.mesh && cell.isRevealed) {
-                        const vector = new THREE.Vector3();
-                        vector.setFromMatrixPosition(cell.mesh.matrixWorld);
-                        vector.project(this.camera);
-                        
-                        const screenX = (vector.x * 0.5 + 0.5) * window.innerWidth;
-                        const screenY = (vector.y * -0.5 + 0.5) * window.innerHeight;
-                        
-                        // Check if the cell is visible (not behind camera)
-                        if (vector.z < 1) {
-                            element.style.left = screenX + 'px';
-                            element.style.top = screenY + 'px';
-                            element.style.opacity = '1';
-                            element.style.transform = 'translate(-50%, -50%)';
-                        } else {
-                            element.style.opacity = '0';
-                        }
-                    }
-                });
+                return colors[number] || '#ffffff';
             }
 
             handleCellClick(x, y, z, isMiddleClick = false) {
@@ -1635,7 +1828,6 @@
                 requestAnimationFrame(() => this.animate());
                 
                 this.updateCamera();
-                this.updateNumberPositions(); // Update number display positions
                 this.updatePerformance();
                 this.renderer.render(this.scene, this.camera);
             }
