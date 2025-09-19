@@ -1,175 +1,14 @@
-toggleNumbers() {
-                this.showNumbers = !this.showNumbers;
-                this.renderGrid3D(); // Re-render to show/hide numbers
-            }
-
-            toggleGrid() {
-                this.showGrid = !this.showGrid;
-                this.createGridHelper();
-            }
-
-            updateGraphics() {
-                this.setupLighting();
-                this.setupMaterials();
-                if (this.effectsLevel >= 1) {
-                    this.scene.fog = new THREE.Fog(0x0f0f23, 10, 100);
-                } else {
-                    this.scene.fog = null;
-                }
-                this.renderer.antialias = this.effectsLevel >= 2;
-                this.renderGrid3D();
-            }
-
-            toggleInstructions() {
-                const instructions = document.querySelector('.instructions');
-                if (instructions) {
-                    instructions.style.opacity = instructions.style.opacity === '0' ? '1' : '0';
-                }
-            }
-        }
-
-        // Global functions
-        let game = new Minesweeper3D();
-
-        function resetGame() {
-            game.initializeGame();
-        }
-
-        function toggleFlagMode() {
-            game.toggleFlagMode();
-        }
-
-        function togglePause() {
-            game.togglePause();
-        }
-
-        function hideGameOver() {
-            document.getElementById('gameOverOverlay').style.display = 'none';
-        }
-
-        function toggleFullscreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => {
-                    console.log('Fullscreen not supported');
-                });
-            } else {
-                document.exitFullscreen();
-            }
-        }
-
-        function resetCamera() {
-            game.resetCamera();
-        }
-
-        function toggleAutoRotate() {
-            game.toggleAutoRotate();
-        }
-
-        function switchView() {
-            game.switchView();
-        }
-
-        function toggleGrid() {
-            game.toggleGrid();
-        }
-
-        function toggleShadows() {
-            game.toggleShadows();
-        }
-
-        function updateGraphics() {
-            const level = parseInt(document.getElementById('effectsSlider').value);
-            game.effectsLevel = level;
-            game.updateGraphics();
-        }
-
-        // Initialize settings based on game state
-        window.addEventListener('load', () => {
-            // Show appropriate controls based on device
-            if (game.isTouchDevice) {
-                // Add mobile-specific styling
-                document.body.classList.add('touch-device');
-            }
-        });
-
-        // Add some helpful shortcuts info
-        console.log(`
-🎮 Enhanced 3D Minesweeper Pro - Clean Interface:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎯 Game Controls:
-   Space     - Toggle flag mode
-   R         - New game
-   Mouse/Touch - Interact with cells
-
-📷 Camera Controls:
-   WASD      - Move camera
-   Mouse/Swipe - Rotate view
-   Scroll/Pinch - Zoom
-
-📱 Touch Controls:
-   Tap           - Reveal cell
-   Long Press    - Flag cell
-   Swipe Right   - Toggle flag mode
-   Swipe Up      - Switch view
-
-✨ Features:
-   🔢 Numbers engraved on blocks
-   📱 Touch/swipe support
-   🎯 Clean dropdown menus
-   📳 Haptic feedback
-
-Happy mining! 💣
-        `);
-    </script>
-</body>
-</html><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💣 3D Minesweeper Pro Enhanced</title>
+    <title>💣 3D Minesweeper Pro</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-        @media (max-width: 768px) {
-            .game-hud {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .instructions, .settings-panel {
-                display: none;
-            }
-            
-            .difficulty-selector {
-                position: relative;
-                top: auto;
-                left: auto;
-                flex-direction: row;
-                gap: 5px;
-                overflow-x: auto;
-                padding: 10px;
-            }
-            
-            .camera-controls {
-                flex-direction: row;
-                right: 10px;
-                bottom: 100px;
-                top: auto;
-                gap: 5px;
-            }
-
-            .performance-info {
-                display: none;
-            }
-
-            .camera-btn {
-                padding: 6px 8px;
-                font-size: 10px;
-                min-width: 60px;
-            }
         }
 
         body {
@@ -231,11 +70,10 @@ Happy mining! 💣
             font-family: 'Courier New', monospace;
         }
 
-        .controls {
+        .menu-section {
             display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
             align-items: center;
+            gap: 15px;
         }
 
         button {
@@ -265,6 +103,57 @@ Happy mining! 💣
         .btn-danger { background: linear-gradient(45deg, #dc3545, #a71e2a); }
         .btn-warning { background: linear-gradient(45deg, #ffc107, #d39e00); }
         .btn-secondary { background: linear-gradient(45deg, #6c757d, #495057); }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            border-radius: 8px;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            top: 100%;
+            right: 0;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .dropdown-content button {
+            background: none;
+            border: none;
+            color: white;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            width: 100%;
+            text-align: left;
+            font-size: 12px;
+            cursor: pointer;
+            border-radius: 0;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .dropdown-content button:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .dropdown-content button:first-child {
+            border-radius: 8px 8px 0 0;
+        }
+
+        .dropdown-content button:last-child {
+            border-radius: 0 0 8px 8px;
+        }
 
         .difficulty-selector {
             position: absolute;
@@ -305,22 +194,6 @@ Happy mining! 💣
             color: #ccc;
             pointer-events: auto;
             border: 1px solid rgba(255, 255, 255, 0.15);
-        }
-
-        .camera-controls {
-            position: absolute;
-            right: 20px;
-            top: 100px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            pointer-events: auto;
-        }
-
-        .camera-btn {
-            padding: 8px 12px;
-            font-size: 12px;
-            min-width: 100px;
         }
 
         #gameCanvas {
@@ -367,157 +240,29 @@ Happy mining! 💣
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
         }
 
-        .instructions {
-            position: absolute;
-            top: 50%;
-            left: 20px;
-            transform: translateY(-50%);
-            background: rgba(0, 0, 0, 0.85);
-            border-radius: 15px;
-            padding: 20px;
-            backdrop-filter: blur(15px);
-            max-width: 300px;
-            font-size: 12px;
-            line-height: 1.6;
-            pointer-events: auto;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            transition: opacity 0.3s ease;
-        }
+        @media (max-width: 768px) {
+            .game-hud {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .difficulty-selector {
+                position: relative;
+                top: auto;
+                left: auto;
+                flex-direction: row;
+                gap: 5px;
+                overflow-x: auto;
+                padding: 10px;
+            }
 
-        .instructions h3 {
-            margin-bottom: 10px;
-            color: #ffc107;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-        }
-
-        .instructions ul {
-            list-style: none;
-            padding: 0;
-        }
-
-        .instructions li {
-            margin: 5px 0;
-            padding-left: 15px;
-            position: relative;
-        }
-
-        .instructions li::before {
-            content: "•";
-            position: absolute;
-            left: 0;
-            color: #007bff;
-        }
-
-        .performance-info {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 10px;
-            color: #888;
-            pointer-events: auto;
-            font-family: 'Courier New', monospace;
-        }
-
-        .settings-panel {
-            position: absolute;
-            top: 250px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.85);
-            border-radius: 15px;
-            padding: 15px;
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            pointer-events: auto;
-            max-width: 200px;
-        }
-
-        .settings-panel h4 {
-            margin-bottom: 10px;
-            color: #ffc107;
-            font-size: 14px;
-        }
-
-        .setting-item {
-            margin: 8px 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-        }
-
-        .setting-item input[type="range"] {
-            flex: 1;
-            height: 4px;
-            background: #333;
-            border-radius: 2px;
-            outline: none;
-        }
-
-        .setting-item input[type="range"]::-webkit-slider-thumb {
-            appearance: none;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #007bff;
-            cursor: pointer;
-        }
-
-        .dropdown {
-            position: relative;
-            display: inline-block;
-        }
-
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            background: rgba(0, 0, 0, 0.9);
-            min-width: 160px;
-            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-            border-radius: 8px;
-            z-index: 1000;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .dropdown:hover .dropdown-content {
-            display: block;
-        }
-
-        .dropdown-content button {
-            background: none;
-            border: none;
-            color: white;
-            padding: 12px 16px;
-            text-decoration: none;
-            display: block;
-            width: 100%;
-            text-align: left;
-            font-size: 12px;
-            cursor: pointer;
-            border-radius: 0;
-        }
-
-        .dropdown-content button:hover {
-            background: rgba(255, 255, 255, 0.1);
-            transform: none;
-            box-shadow: none;
-        }
-
-        .dropdown-content button:first-child {
-            border-radius: 8px 8px 0 0;
-        }
-
-        .dropdown-content button:last-child {
-            border-radius: 0 0 8px 8px;
-        }
-
-        .menu-section {
-            display: flex;
-            align-items: center;
-            gap: 15px;
+            .dropdown-content {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                min-width: 200px;
+            }
         }
     </style>
 </head>
@@ -560,72 +305,9 @@ Happy mining! 💣
         </div>
 
         <div class="difficulty-selector">
-            <button class="difficulty-btn btn-secondary" data-difficulty="beginner">Beginner<br>9×9×9</button>
-            <button class="difficulty-btn btn-secondary" data-difficulty="intermediate">Intermediate<br>16×16×16</button>
-            <button class="difficulty-btn btn-secondary active" data-difficulty="expert">Expert<br>48×48×1</button>
-            <button class="difficulty-btn btn-secondary" data-difficulty="custom">Custom<br>Settings</button>
-        </div>
-
-        <div class="camera-controls">
-            <button class="camera-btn btn-secondary" onclick="resetCamera()">📷 Reset View</button>
-            <button class="camera-btn btn-secondary" onclick="toggleAutoRotate()" id="autoRotateBtn">🔄 Auto Rotate</button>
-            <button class="camera-btn btn-secondary" onclick="switchView()">👁️ Switch View</button>
-            <button class="camera-btn btn-secondary" onclick="toggleWireframe()" id="wireframeBtn">🔲 Wireframe</button>
-            <button class="camera-btn btn-secondary" onclick="toggleNumbers()" id="numbersBtn">🔢 Numbers</button>
-        </div>wireframeBtn">🔲 Wireframe</button>
-        </div>
-
-        <div class="settings-panel">
-            <h4>Graphics</h4>
-            <div class="setting-item">
-                <span>Effects:</span>
-                <input type="range" id="effectsSlider" min="0" max="2" value="2" onchange="updateGraphics()">
-            </div>
-            <div class="setting-item">
-                <span>Grid:</span>
-                <input type="checkbox" id="gridToggle" checked onchange="toggleGrid()">
-            </div>
-            <div class="setting-item">
-                <span>Shadows:</span>
-                <input type="checkbox" id="shadowToggle" checked onchange="toggleShadows()">
-            </div>
-            <div class="setting-item">
-                <span>Numbers:</span>
-                <input type="checkbox" id="numbersToggle" checked onchange="toggleNumbers()">
-            </div>
-        </div>
-
-        <div class="instructions">
-            <h3>Controls</h3>
-            <ul>
-                <li id="desktopControls">Mouse: Rotate camera</li>
-                <li id="desktopControls2">Scroll: Zoom in/out</li>
-                <li id="touchControls" style="display:none">Tap: Reveal cell</li>
-                <li id="touchControls2" style="display:none">Long press: Flag cell</li>
-                <li id="touchControls3" style="display:none">Swipe right: Toggle flag mode</li>
-                <li id="touchControls4" style="display:none">Swipe up: Switch view</li>
-                <li id="touchControls5" style="display:none">Pinch: Zoom</li>
-                <li>Click/Tap: Reveal cell</li>
-                <li>Right-click/Long press: Flag</li>
-                <li>WASD: Move camera</li>
-                <li>Space: Toggle flag mode</li>
-                <li>P: Pause game</li>
-                <li>R: Restart</li>
-            </ul>
-            <h3>Game Rules</h3>
-            <ul>
-                <li>Clear all non-mine cells</li>
-                <li>Numbers show adjacent mines</li>
-                <li>Flag suspected mines</li>
-                <li>First click is always safe</li>
-                <li>Middle-click: Auto-reveal</li>
-            </ul>
-        </div>
-
-        <div class="performance-info" id="performanceInfo">
-            FPS: 60<br>
-            Cells: 0<br>
-            Draw calls: 0
+            <button class="difficulty-btn btn-secondary" data-difficulty="beginner">Easy<br>9×9×9</button>
+            <button class="difficulty-btn btn-secondary" data-difficulty="intermediate">Medium<br>16×16×16</button>
+            <button class="difficulty-btn btn-secondary active" data-difficulty="expert">Hard<br>48×48×1</button>
         </div>
 
         <div class="game-info">
@@ -650,49 +332,24 @@ Happy mining! 💣
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        // Add CSS for number display
-        const numberStyles = document.createElement('style');
-        numberStyles.textContent = `
-            .cell-number {
-                position: absolute;
-                pointer-events: none;
-                font-family: 'Courier New', monospace;
-                font-weight: bold;
-                font-size: 12px;
-                color: white;
-                text-shadow: 0 0 3px rgba(0,0,0,0.8);
-                z-index: 1;
-                user-select: none;
-                transition: all 0.3s ease;
-            }
-        `;
-        document.head.appendChild(numberStyles);
-    </script>
-    <script>
         class Minesweeper3D {
             constructor() {
                 this.difficulties = {
                     beginner: { x: 9, y: 9, z: 9, mines: 80 },
                     intermediate: { x: 16, y: 16, z: 16, mines: 400 },
-                    expert: { x: 48, y: 48, z: 1, mines: 480 },
-                    custom: { x: 20, y: 20, z: 5, mines: 200 }
+                    expert: { x: 48, y: 48, z: 1, mines: 480 }
                 };
                 
                 this.currentDifficulty = 'expert';
                 this.grid = [];
                 this.gameState = 'playing';
-                this.isPaused = false;
                 this.flagMode = false;
                 this.firstClick = true;
                 this.timer = 0;
                 this.timerInterval = null;
                 this.mineCount = 0;
                 this.autoRotate = false;
-                this.wireframe = false;
                 this.showGrid = true;
-                this.showNumbers = true;
-                this.effectsLevel = 2;
-                this.enableShadows = true;
                 
                 // Touch controls
                 this.isTouchDevice = 'ontouchstart' in window;
@@ -700,15 +357,8 @@ Happy mining! 💣
                 this.touchStartY = 0;
                 this.touchStartTime = 0;
                 this.isSwipe = false;
-                this.swipeThreshold = 50;
-                this.tapTimeout = null;
                 this.longPressTimeout = null;
                 this.isLongPress = false;
-                
-                // Performance tracking
-                this.frameCount = 0;
-                this.lastTime = performance.now();
-                this.fps = 60;
                 
                 this.initThree();
                 this.initializeGame();
@@ -720,11 +370,7 @@ Happy mining! 💣
                 // Scene setup
                 this.scene = new THREE.Scene();
                 this.scene.background = new THREE.Color(0x0f0f23);
-                
-                // Fog for depth perception
-                if (this.effectsLevel >= 1) {
-                    this.scene.fog = new THREE.Fog(0x0f0f23, 10, 100);
-                }
+                this.scene.fog = new THREE.Fog(0x0f0f23, 10, 100);
                 
                 // Camera setup
                 this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -733,18 +379,22 @@ Happy mining! 💣
                 // Renderer setup
                 this.renderer = new THREE.WebGLRenderer({ 
                     canvas: document.getElementById('gameCanvas'),
-                    antialias: this.effectsLevel >= 2,
-                    powerPreference: "high-performance"
+                    antialias: true 
                 });
                 this.renderer.setSize(window.innerWidth, window.innerHeight);
-                this.renderer.shadowMap.enabled = this.enableShadows;
+                this.renderer.shadowMap.enabled = true;
                 this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-                this.renderer.outputEncoding = THREE.sRGBEncoding;
-                this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-                this.renderer.toneMappingExposure = 1.2;
                 
                 // Lighting
-                this.setupLighting();
+                const ambientLight = new THREE.AmbientLight(0x404080, 0.4);
+                this.scene.add(ambientLight);
+                
+                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                directionalLight.position.set(50, 50, 50);
+                directionalLight.castShadow = true;
+                directionalLight.shadow.mapSize.width = 1024;
+                directionalLight.shadow.mapSize.height = 1024;
+                this.scene.add(directionalLight);
                 
                 // Controls setup
                 this.setupControls();
@@ -753,9 +403,8 @@ Happy mining! 💣
                 this.raycaster = new THREE.Raycaster();
                 this.mouse = new THREE.Vector2();
                 this.hoveredCell = null;
-                this.lastHoveredPosition = null;
                 
-                // Materials with improved shading
+                // Materials
                 this.setupMaterials();
                 
                 // Grid helper
@@ -763,87 +412,38 @@ Happy mining! 💣
                 this.createGridHelper();
             }
 
-            setupLighting() {
-                // Remove existing lights
-                this.scene.children = this.scene.children.filter(child => !(child instanceof THREE.Light));
-                
-                const ambientLight = new THREE.AmbientLight(0x404080, 0.4);
-                this.scene.add(ambientLight);
-                
-                const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-                directionalLight.position.set(50, 50, 50);
-                
-                if (this.enableShadows) {
-                    directionalLight.castShadow = true;
-                    directionalLight.shadow.mapSize.width = 1024;
-                    directionalLight.shadow.mapSize.height = 1024;
-                    directionalLight.shadow.camera.near = 0.5;
-                    directionalLight.shadow.camera.far = 200;
-                    directionalLight.shadow.camera.left = -50;
-                    directionalLight.shadow.camera.right = 50;
-                    directionalLight.shadow.camera.top = 50;
-                    directionalLight.shadow.camera.bottom = -50;
-                }
-                
-                this.scene.add(directionalLight);
-                
-                // Additional lighting for better visibility
-                const pointLight = new THREE.PointLight(0x4080ff, 0.3, 100);
-                pointLight.position.set(-30, 30, -30);
-                this.scene.add(pointLight);
-            }
-
             setupMaterials() {
                 this.materials = {
-                    hidden: new THREE.MeshPhongMaterial({ 
-                        color: 0x666666,
-                        shininess: 30,
-                        transparent: false
-                    }),
-                    revealed: new THREE.MeshPhongMaterial({ 
-                        color: 0xeeeeee,
-                        shininess: 10
-                    }),
-                    flagged: new THREE.MeshPhongMaterial({ 
-                        color: 0xff4444,
-                        shininess: 50,
-                        emissive: 0x220000,
-                        emissiveIntensity: 0.1
-                    }),
-                    mine: new THREE.MeshPhongMaterial({ 
-                        color: 0x330000,
-                        shininess: 20,
-                        emissive: 0x440000,
-                        emissiveIntensity: 0.3
-                    }),
-                    hover: new THREE.MeshPhongMaterial({ 
-                        color: 0x88aaff,
-                        shininess: 100,
-                        emissive: 0x002244,
-                        emissiveIntensity: 0.2
-                    }),
-                    explosion: new THREE.MeshPhongMaterial({
-                        color: 0xff6600,
-                        emissive: 0xff2200,
-                        emissiveIntensity: 0.5
-                    })
+                    hidden: new THREE.MeshPhongMaterial({ color: 0x666666, shininess: 30 }),
+                    revealed: new THREE.MeshPhongMaterial({ color: 0xeeeeee, shininess: 10 }),
+                    flagged: new THREE.MeshPhongMaterial({ color: 0xff4444, shininess: 50, emissive: 0x220000, emissiveIntensity: 0.1 }),
+                    mine: new THREE.MeshPhongMaterial({ color: 0x330000, shininess: 20, emissive: 0x440000, emissiveIntensity: 0.3 }),
+                    hover: new THREE.MeshPhongMaterial({ color: 0x88aaff, shininess: 100, emissive: 0x002244, emissiveIntensity: 0.2 })
                 };
                 
-                // Enhanced number materials with better colors
+                // Number materials with colors
                 this.numberMaterials = [
-                    null, // 0
-                    new THREE.MeshPhongMaterial({ color: 0x2266ff, shininess: 20 }), // 1 - blue
-                    new THREE.MeshPhongMaterial({ color: 0x22aa22, shininess: 20 }), // 2 - green
-                    new THREE.MeshPhongMaterial({ color: 0xff2222, shininess: 20 }), // 3 - red
-                    new THREE.MeshPhongMaterial({ color: 0x8822aa, shininess: 20 }), // 4 - purple
-                    new THREE.MeshPhongMaterial({ color: 0xaa2222, shininess: 20 }), // 5 - maroon
-                    new THREE.MeshPhongMaterial({ color: 0x22aaaa, shininess: 20 }), // 6 - teal
-                    new THREE.MeshPhongMaterial({ color: 0x222222, shininess: 5 }),  // 7 - black
-                    new THREE.MeshPhongMaterial({ color: 0x888888, shininess: 10 })  // 8 - gray
+                    null,
+                    new THREE.MeshPhongMaterial({ color: 0x2266ff, shininess: 20 }),
+                    new THREE.MeshPhongMaterial({ color: 0x22aa22, shininess: 20 }),
+                    new THREE.MeshPhongMaterial({ color: 0xff2222, shininess: 20 }),
+                    new THREE.MeshPhongMaterial({ color: 0x8822aa, shininess: 20 }),
+                    new THREE.MeshPhongMaterial({ color: 0xaa2222, shininess: 20 }),
+                    new THREE.MeshPhongMaterial({ color: 0x22aaaa, shininess: 20 }),
+                    new THREE.MeshPhongMaterial({ color: 0x222222, shininess: 5 }),
+                    new THREE.MeshPhongMaterial({ color: 0x888888, shininess: 10 })
                 ];
+            }
 
-                // Create font loader for 3D text
-                this.fontLoader = new THREE.FontLoader();
+            setupControls() {
+                this.isMouseDown = false;
+                this.mouseX = 0;
+                this.mouseY = 0;
+                this.cameraDistance = 50;
+                this.cameraTheta = 0;
+                this.cameraPhi = Math.PI / 4;
+                
+                this.keys = { w: false, a: false, s: false, d: false };
             }
 
             createGridHelper() {
@@ -860,21 +460,6 @@ Happy mining! 💣
                 this.scene.add(this.gridHelper);
             }
 
-            setupControls() {
-                this.isMouseDown = false;
-                this.mouseX = 0;
-                this.mouseY = 0;
-                this.cameraDistance = 50;
-                this.cameraTheta = 0;
-                this.cameraPhi = Math.PI / 4;
-                this.cameraTarget = new THREE.Vector3(0, 0, 0);
-                
-                this.keys = {
-                    w: false, a: false, s: false, d: false,
-                    shift: false, ctrl: false
-                };
-            }
-
             initializeGame() {
                 const config = this.difficulties[this.currentDifficulty];
                 this.sizeX = config.x;
@@ -883,7 +468,6 @@ Happy mining! 💣
                 this.totalMines = config.mines;
                 this.mineCount = this.totalMines;
                 this.gameState = 'playing';
-                this.isPaused = false;
                 this.firstClick = true;
                 this.timer = 0;
                 
@@ -913,22 +497,108 @@ Happy mining! 💣
                                 isFlagged: false,
                                 adjacentMines: 0,
                                 mesh: null,
-                                position: { x, y, z },
-                                animationPhase: 0
+                                position: { x, y, z }
                             };
                         }
                     }
                 }
             }
 
-            placeMines(excludeX, excludeY, excludeZ) {
-                // Create larger exclusion zone for better first-click experience
-                const excludeZone = new Set();
-                const radius = Math.max(1, Math.min(3, Math.floor(Math.min(this.sizeX, this.sizeY, this.sizeZ) / 10)));
+            renderGrid3D() {
+                // Clear existing meshes
+                const cellsToRemove = [];
+                this.scene.traverse((child) => {
+                    if (child.userData.isCell || child.userData.isNumber) {
+                        cellsToRemove.push(child);
+                    }
+                });
+                cellsToRemove.forEach(cell => this.scene.remove(cell));
                 
-                for (let x = Math.max(0, excludeX - radius); x <= Math.min(this.sizeX - 1, excludeX + radius); x++) {
-                    for (let y = Math.max(0, excludeY - radius); y <= Math.min(this.sizeY - 1, excludeY + radius); y++) {
-                        for (let z = Math.max(0, excludeZ - radius); z <= Math.min(this.sizeZ - 1, excludeZ + radius); z++) {
+                const geometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+                const spacing = 1;
+                
+                for (let x = 0; x < this.sizeX; x++) {
+                    for (let y = 0; y < this.sizeY; y++) {
+                        for (let z = 0; z < this.sizeZ; z++) {
+                            const cell = this.grid[x][y][z];
+                            let material = this.materials.hidden;
+                            
+                            if (cell.isFlagged) {
+                                material = this.materials.flagged;
+                            } else if (cell.isRevealed) {
+                                if (cell.isMine) {
+                                    material = this.materials.mine;
+                                } else if (cell.adjacentMines > 0) {
+                                    material = this.numberMaterials[cell.adjacentMines];
+                                } else {
+                                    material = this.materials.revealed;
+                                }
+                            }
+                            
+                            const mesh = new THREE.Mesh(geometry, material);
+                            mesh.position.set(
+                                (x - this.sizeX/2) * spacing,
+                                (y - this.sizeY/2) * spacing,
+                                (z - this.sizeZ/2) * spacing
+                            );
+                            mesh.userData = { isCell: true, x, y, z, cell };
+                            mesh.castShadow = true;
+                            mesh.receiveShadow = true;
+                            
+                            this.scene.add(mesh);
+                            cell.mesh = mesh;
+                            
+                            // Add engraved number for revealed cells
+                            if (cell.isRevealed && !cell.isMine && cell.adjacentMines > 0) {
+                                this.createEngravedNumber(cell, x, y, z);
+                            }
+                        }
+                    }
+                }
+            }
+
+            createEngravedNumber(cell, x, y, z) {
+                // Create canvas for number texture
+                const canvas = document.createElement('canvas');
+                const size = 64;
+                canvas.width = size;
+                canvas.height = size;
+                const context = canvas.getContext('2d');
+                
+                // Draw background
+                context.fillStyle = '#f0f0f0';
+                context.fillRect(0, 0, size, size);
+                
+                // Draw number
+                const colors = ['', '#2266ff', '#22aa22', '#ff2222', '#8822aa', '#aa2222', '#22aaaa', '#222222', '#888888'];
+                context.fillStyle = colors[cell.adjacentMines] || '#000000';
+                context.font = 'bold 40px Arial';
+                context.textAlign = 'center';
+                context.textBaseline = 'middle';
+                context.fillText(cell.adjacentMines.toString(), size/2, size/2);
+                
+                // Create texture and material
+                const texture = new THREE.CanvasTexture(canvas);
+                const numberMaterial = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
+                
+                // Create plane geometry for the number
+                const numberGeometry = new THREE.PlaneGeometry(0.4, 0.4);
+                const numberMesh = new THREE.Mesh(numberGeometry, numberMaterial);
+                
+                // Position on cube face
+                numberMesh.position.copy(cell.mesh.position);
+                numberMesh.position.z += 0.41;
+                numberMesh.userData = { isNumber: true, parentCell: { x, y, z } };
+                
+                this.scene.add(numberMesh);
+            }
+
+            placeMines(excludeX, excludeY, excludeZ) {
+                // Create exclusion zone around first click
+                const excludeZone = new Set();
+                for (let x = Math.max(0, excludeX - 1); x <= Math.min(this.sizeX - 1, excludeX + 1); x++) {
+                    for (let y = Math.max(0, excludeY - 1); y <= Math.min(this.sizeY - 1, excludeY + 1); y++) {
+                        for (let z = Math.max(0, excludeZ - 1); z <= Math.min(this.sizeZ - 1, excludeZ + 1); z++) {
                             excludeZone.add(`${x},${y},${z}`);
                         }
                     }
@@ -971,16 +641,9 @@ Happy mining! 💣
                         for (let dz = -1; dz <= 1; dz++) {
                             if (dx === 0 && dy === 0 && dz === 0) continue;
                             
-                            const nx = x + dx;
-                            const ny = y + dy;
-                            const nz = z + dz;
-                            
-                            if (nx >= 0 && nx < this.sizeX && 
-                                ny >= 0 && ny < this.sizeY && 
-                                nz >= 0 && nz < this.sizeZ) {
-                                if (this.grid[nx][ny][nz].isMine) {
-                                    count++;
-                                }
+                            const nx = x + dx, ny = y + dy, nz = z + dz;
+                            if (nx >= 0 && nx < this.sizeX && ny >= 0 && ny < this.sizeY && nz >= 0 && nz < this.sizeZ) {
+                                if (this.grid[nx][ny][nz].isMine) count++;
                             }
                         }
                     }
@@ -988,141 +651,13 @@ Happy mining! 💣
                 return count;
             }
 
-            renderGrid3D() {
-                // Clear existing meshes
-                const cellsToRemove = [];
-                this.scene.traverse((child) => {
-                    if (child.userData.isCell || child.userData.isNumber) {
-                        cellsToRemove.push(child);
-                    }
-                });
-                cellsToRemove.forEach(cell => this.scene.remove(cell));
-                
-                // Create new meshes with optimized geometry
-                const geometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
-                const spacing = 1;
-                
-                for (let x = 0; x < this.sizeX; x++) {
-                    for (let y = 0; y < this.sizeY; y++) {
-                        for (let z = 0; z < this.sizeZ; z++) {
-                            const cell = this.grid[x][y][z];
-                            let material = this.materials.hidden;
-                            
-                            if (cell.isFlagged) {
-                                material = this.materials.flagged;
-                            } else if (cell.isRevealed) {
-                                if (cell.isMine) {
-                                    material = this.materials.mine;
-                                } else if (cell.adjacentMines > 0) {
-                                    material = this.numberMaterials[cell.adjacentMines];
-                                } else {
-                                    material = this.materials.revealed;
-                                }
-                            }
-                            
-                            const mesh = new THREE.Mesh(geometry, material);
-                            mesh.position.set(
-                                (x - this.sizeX/2) * spacing,
-                                (y - this.sizeY/2) * spacing,
-                                (z - this.sizeZ/2) * spacing
-                            );
-                            mesh.userData = {
-                                isCell: true,
-                                x: x,
-                                y: y,
-                                z: z,
-                                cell: cell
-                            };
-                            
-                            if (this.enableShadows) {
-                                mesh.castShadow = true;
-                                mesh.receiveShadow = true;
-                            }
-                            
-                            this.scene.add(mesh);
-                            cell.mesh = mesh;
-                            
-                            // Add engraved number on revealed cells with adjacent mines
-                            if (cell.isRevealed && !cell.isMine && cell.adjacentMines > 0) {
-                                this.createEngravedNumber(cell, x, y, z);
-                            }
-                        }
-                    }
-                }
-            }
-
-            createEngravedNumber(cell, x, y, z) {
-                // Create a simple geometry for the number using a plane
-                const numberGeometry = new THREE.PlaneGeometry(0.4, 0.4);
-                
-                // Create canvas for the number texture
-                const canvas = document.createElement('canvas');
-                const size = 64;
-                canvas.width = size;
-                canvas.height = size;
-                const context = canvas.getContext('2d');
-                
-                // Draw number on canvas
-                context.fillStyle = '#ffffff';
-                context.fillRect(0, 0, size, size);
-                
-                // Add subtle shadow/engraved effect
-                context.fillStyle = '#dddddd';
-                context.fillRect(0, 0, size, size);
-                
-                // Draw the number
-                context.fillStyle = this.getNumberColor(cell.adjacentMines);
-                context.font = 'bold 48px Arial';
-                context.textAlign = 'center';
-                context.textBaseline = 'middle';
-                context.fillText(cell.adjacentMines.toString(), size/2, size/2);
-                
-                // Add subtle shadow for engraved effect
-                context.globalCompositeOperation = 'multiply';
-                context.fillStyle = '#aaaaaa';
-                context.fillText(cell.adjacentMines.toString(), size/2 + 1, size/2 + 1);
-                
-                // Create texture from canvas
-                const texture = new THREE.CanvasTexture(canvas);
-                const numberMaterial = new THREE.MeshBasicMaterial({ 
-                    map: texture,
-                    transparent: true,
-                    alphaTest: 0.5
-                });
-                
-                const numberMesh = new THREE.Mesh(numberGeometry, numberMaterial);
-                
-                // Position the number on the front face of the cube
-                const cellPosition = cell.mesh.position.clone();
-                numberMesh.position.copy(cellPosition);
-                numberMesh.position.z += 0.41; // Slightly in front of the cube face
-                
-                numberMesh.userData = {
-                    isNumber: true,
-                    parentCell: { x, y, z }
-                };
-                
-                this.scene.add(numberMesh);
-            }
-
-            getNumberColor(number) {
-                const colors = [
-                    '#ffffff', '#2266ff', '#22aa22', '#ff2222', '#8822aa', 
-                    '#aa2222', '#22aaaa', '#222222', '#888888'
-                ];
-                return colors[number] || '#ffffff';
-            }
-
             handleCellClick(x, y, z, isMiddleClick = false) {
-                if (this.gameState !== 'playing' || this.isPaused) return;
+                if (this.gameState !== 'playing') return;
                 
                 const cell = this.grid[x][y][z];
                 
-                if (isMiddleClick) {
-                    // Middle click: Auto-reveal adjacent cells if flags match mine count
-                    if (cell.isRevealed && cell.adjacentMines > 0) {
-                        this.autoRevealAdjacent(x, y, z);
-                    }
+                if (isMiddleClick && cell.isRevealed && cell.adjacentMines > 0) {
+                    this.autoRevealAdjacent(x, y, z);
                     return;
                 }
                 
@@ -1140,7 +675,6 @@ Happy mining! 💣
                 let flaggedCount = 0;
                 const adjacentCells = [];
                 
-                // Count flagged adjacent cells
                 for (let dx = -1; dx <= 1; dx++) {
                     for (let dy = -1; dy <= 1; dy++) {
                         for (let dz = -1; dz <= 1; dz++) {
@@ -1156,7 +690,6 @@ Happy mining! 💣
                     }
                 }
                 
-                // If flagged count matches mine count, reveal all unflagged adjacent cells
                 if (flaggedCount === cell.adjacentMines) {
                     adjacentCells.forEach(({x, y, z}) => this.revealCell(x, y, z));
                 }
@@ -1164,7 +697,6 @@ Happy mining! 💣
 
             revealCell(x, y, z) {
                 const cell = this.grid[x][y][z];
-                
                 if (cell.isRevealed || cell.isFlagged) return;
                 
                 if (this.firstClick) {
@@ -1174,7 +706,6 @@ Happy mining! 💣
                 }
                 
                 cell.isRevealed = true;
-                this.animateReveal(cell);
                 
                 if (cell.isMine) {
                     this.gameState = 'lost';
@@ -1191,23 +722,6 @@ Happy mining! 💣
                 this.updateUI();
             }
 
-            animateReveal(cell) {
-                if (!cell.mesh || this.effectsLevel < 1) return;
-                
-                const originalScale = cell.mesh.scale.clone();
-                cell.mesh.scale.set(0.1, 0.1, 0.1);
-                
-                const animate = () => {
-                    cell.mesh.scale.lerp(originalScale, 0.3);
-                    if (cell.mesh.scale.length() < originalScale.length() * 0.95) {
-                        requestAnimationFrame(animate);
-                    } else {
-                        cell.mesh.scale.copy(originalScale);
-                    }
-                };
-                animate();
-            }
-
             revealAdjacentCells(x, y, z) {
                 const stack = [{x, y, z}];
                 const processed = new Set();
@@ -1215,7 +729,6 @@ Happy mining! 💣
                 while (stack.length > 0) {
                     const {x: cx, y: cy, z: cz} = stack.pop();
                     const key = `${cx},${cy},${cz}`;
-                    
                     if (processed.has(key)) continue;
                     processed.add(key);
                     
@@ -1229,7 +742,6 @@ Happy mining! 💣
                                     const adjCell = this.grid[nx][ny][nz];
                                     if (!adjCell.isRevealed && !adjCell.isFlagged && !adjCell.isMine) {
                                         adjCell.isRevealed = true;
-                                        this.animateReveal(adjCell);
                                         if (adjCell.adjacentMines === 0) {
                                             stack.push({x: nx, y: ny, z: nz});
                                         }
@@ -1243,807 +755,4 @@ Happy mining! 💣
 
             toggleFlag(x, y, z) {
                 const cell = this.grid[x][y][z];
-                
                 if (cell.isRevealed) return;
-                
-                cell.isFlagged = !cell.isFlagged;
-                this.mineCount += cell.isFlagged ? -1 : 1;
-                
-                // Flag animation
-                if (cell.mesh && this.effectsLevel >= 1) {
-                    const targetY = cell.isFlagged ? 0.3 : 0;
-                    const animate = () => {
-                        const currentY = cell.mesh.position.y - ((cell.position.y - this.sizeY/2));
-                        const newY = THREE.MathUtils.lerp(currentY, targetY, 0.2);
-                        cell.mesh.position.y = (cell.position.y - this.sizeY/2) + newY;
-                        
-                        if (Math.abs(newY - targetY) > 0.01) {
-                            requestAnimationFrame(animate);
-                        }
-                    };
-                    animate();
-                }
-                
-                this.renderGrid3D();
-                this.updateUI();
-            }
-
-            revealAllMines() {
-                for (let x = 0; x < this.sizeX; x++) {
-                    for (let y = 0; y < this.sizeY; y++) {
-                        for (let z = 0; z < this.sizeZ; z++) {
-                            const cell = this.grid[x][y][z];
-                            if (cell.isMine) {
-                                cell.isRevealed = true;
-                                if (cell.mesh && this.effectsLevel >= 2) {
-                                    // Explosion effect
-                                    cell.mesh.material = this.materials.explosion;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            checkWinCondition() {
-                let revealedSafeCells = 0;
-                const totalSafeCells = this.sizeX * this.sizeY * this.sizeZ - this.totalMines;
-                
-                for (let x = 0; x < this.sizeX; x++) {
-                    for (let y = 0; y < this.sizeY; y++) {
-                        for (let z = 0; z < this.sizeZ; z++) {
-                            const cell = this.grid[x][y][z];
-                            if (cell.isRevealed && !cell.isMine) {
-                                revealedSafeCells++;
-                            }
-                        }
-                    }
-                }
-                
-                if (revealedSafeCells === totalSafeCells) {
-                    this.gameState = 'won';
-                    this.endGame();
-                }
-            }
-
-            startTimer() {
-                this.timerInterval = setInterval(() => {
-                    if (!this.isPaused) {
-                        this.timer++;
-                        this.updateUI();
-                    }
-                }, 1000);
-            }
-
-            endGame() {
-                if (this.timerInterval) {
-                    clearInterval(this.timerInterval);
-                    this.timerInterval = null;
-                }
-                
-                setTimeout(() => {
-                    this.showGameOver();
-                }, 500);
-            }
-
-            showGameOver() {
-                const overlay = document.getElementById('gameOverOverlay');
-                const title = document.getElementById('gameOverTitle');
-                const message = document.getElementById('gameOverMessage');
-                const stats = document.getElementById('gameOverStats');
-                
-                const revealedCells = this.countRevealedCells();
-                const totalSafeCells = this.sizeX * this.sizeY * this.sizeZ - this.totalMines;
-                const progressPercent = Math.round((revealedCells / totalSafeCells) * 100);
-                
-                if (this.gameState === 'won') {
-                    title.textContent = '🎉';
-                    message.textContent = `Congratulations! You won!`;
-                    stats.innerHTML = `
-                        <div style="margin: 20px 0; font-size: 14px; color: #ccc;">
-                            <div>⏰ Time: ${this.formatTime(this.timer)}</div>
-                            <div>💣 Mines: ${this.totalMines}</div>
-                            <div>🎯 Accuracy: 100%</div>
-                            <div>📦 Grid: ${this.sizeX}×${this.sizeY}×${this.sizeZ}</div>
-                        </div>
-                    `;
-                } else {
-                    title.textContent = '💣';
-                    message.textContent = 'Game Over!';
-                    stats.innerHTML = `
-                        <div style="margin: 20px 0; font-size: 14px; color: #ccc;">
-                            <div>⏰ Time: ${this.formatTime(this.timer)}</div>
-                            <div>📊 Progress: ${progressPercent}%</div>
-                            <div>💣 Mines: ${this.totalMines}</div>
-                            <div>📦 Grid: ${this.sizeX}×${this.sizeY}×${this.sizeZ}</div>
-                        </div>
-                    `;
-                }
-                
-                overlay.style.display = 'flex';
-            }
-
-            formatTime(seconds) {
-                const mins = Math.floor(seconds / 60);
-                const secs = seconds % 60;
-                return `${mins}:${secs.toString().padStart(2, '0')}`;
-            }
-
-            countRevealedCells() {
-                let count = 0;
-                for (let x = 0; x < this.sizeX; x++) {
-                    for (let y = 0; y < this.sizeY; y++) {
-                        for (let z = 0; z < this.sizeZ; z++) {
-                            if (this.grid[x][y][z].isRevealed && !this.grid[x][y][z].isMine) {
-                                count++;
-                            }
-                        }
-                    }
-                }
-                return count;
-            }
-
-            updateUI() {
-                document.getElementById('mineCount').textContent = this.mineCount;
-                document.getElementById('timer').textContent = this.formatTime(this.timer);
-                document.getElementById('gameMode').textContent = this.flagMode ? 'Flag Mode ON' : 'Click to Reveal';
-                
-                // Progress indicator
-                const revealedCells = this.countRevealedCells();
-                const totalSafeCells = this.sizeX * this.sizeY * this.sizeZ - this.totalMines;
-                const progressPercent = Math.round((revealedCells / totalSafeCells) * 100);
-                document.getElementById('progress').textContent = `Progress: ${progressPercent}%`;
-                
-                const statusEl = document.getElementById('gameStatus');
-                statusEl.className = 'status-indicator';
-                
-                switch (this.gameState) {
-                    case 'won':
-                        statusEl.textContent = 'Won! 🎉';
-                        statusEl.style.background = 'linear-gradient(45deg, #ffc107, #d39e00)';
-                        break;
-                    case 'lost':
-                        statusEl.textContent = 'Lost 💣';
-                        statusEl.style.background = 'linear-gradient(45deg, #dc3545, #a71e2a)';
-                        break;
-                    default:
-                        statusEl.textContent = this.isPaused ? 'Paused ⏸️' : 'Playing';
-                        statusEl.style.background = this.isPaused ? 
-                            'linear-gradient(45deg, #6c757d, #495057)' : 
-                            'linear-gradient(45deg, #28a745, #1e7e34)';
-                }
-                
-                const flagBtn = document.getElementById('flagModeBtn');
-                flagBtn.className = this.flagMode ? 'btn-danger' : 'btn-warning';
-                flagBtn.textContent = this.flagMode ? '🚩 Flag ON' : '🚩 Flag OFF';
-                
-                const pauseBtn = document.getElementById('pauseBtn');
-                pauseBtn.textContent = this.isPaused ? '▶️ Resume' : '⏸️ Pause';
-                
-                const autoRotateBtn = document.getElementById('autoRotateBtn');
-                autoRotateBtn.className = this.autoRotate ? 'camera-btn btn-success' : 'camera-btn btn-secondary';
-                
-                const wireframeBtn = document.getElementById('wireframeBtn');
-                wireframeBtn.className = this.wireframe ? 'camera-btn btn-warning' : 'camera-btn btn-secondary';
-            }
-
-            setupEventListeners() {
-                const canvas = document.getElementById('gameCanvas');
-                
-                if (this.isTouchDevice) {
-                    // Touch events for mobile
-                    canvas.addEventListener('touchstart', (e) => this.onTouchStart(e), { passive: false });
-                    canvas.addEventListener('touchmove', (e) => this.onTouchMove(e), { passive: false });
-                    canvas.addEventListener('touchend', (e) => this.onTouchEnd(e), { passive: false });
-                } else {
-                    // Mouse events for desktop
-                    canvas.addEventListener('mousedown', (e) => this.onMouseDown(e));
-                    canvas.addEventListener('mousemove', (e) => this.onMouseMove(e));
-                    canvas.addEventListener('mouseup', (e) => this.onMouseUp(e));
-                    canvas.addEventListener('wheel', (e) => this.onMouseWheel(e), { passive: false });
-                    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-                }
-                
-                // Keyboard events
-                document.addEventListener('keydown', (e) => this.onKeyDown(e));
-                document.addEventListener('keyup', (e) => this.onKeyUp(e));
-                
-                // Window resize
-                window.addEventListener('resize', () => this.onWindowResize());
-                
-                // Difficulty buttons
-                document.querySelectorAll('.difficulty-btn').forEach(btn => {
-                    btn.addEventListener('click', (e) => {
-                        document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('active'));
-                        e.target.classList.add('active');
-                        this.currentDifficulty = e.target.dataset.difficulty;
-                        this.initializeGame();
-                    });
-                });
-
-                // Settings
-                document.getElementById('effectsSlider').addEventListener('input', (e) => {
-                    this.effectsLevel = parseInt(e.target.value);
-                    this.updateGraphics();
-                });
-                
-                // Prevent context menu on touch devices
-                if (this.isTouchDevice) {
-                    document.addEventListener('contextmenu', (e) => e.preventDefault());
-                }
-            }
-
-            // Touch event handlers
-            onTouchStart(event) {
-                event.preventDefault();
-                
-                const touch = event.touches[0];
-                this.touchStartX = touch.clientX;
-                this.touchStartY = touch.clientY;
-                this.touchStartTime = Date.now();
-                this.isSwipe = false;
-                this.isLongPress = false;
-                
-                // Set up long press detection
-                this.longPressTimeout = setTimeout(() => {
-                    this.isLongPress = true;
-                    // Trigger flag mode on long press
-                    this.checkCellClick(event, true);
-                    // Haptic feedback if available
-                    if (navigator.vibrate) navigator.vibrate(50);
-                }, 500);
-                
-                // Store initial camera position for rotation
-                this.initialCameraTheta = this.cameraTheta;
-                this.initialCameraPhi = this.cameraPhi;
-            }
-
-            onTouchMove(event) {
-                event.preventDefault();
-                
-                if (this.isPaused) return;
-                
-                const touch = event.touches[0];
-                const deltaX = touch.clientX - this.touchStartX;
-                const deltaY = touch.clientY - this.touchStartY;
-                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-                
-                // If movement is significant, it's a swipe/drag
-                if (distance > 10) {
-                    this.isSwipe = true;
-                    clearTimeout(this.longPressTimeout);
-                    
-                    // Multi-touch pinch zoom
-                    if (event.touches.length === 2) {
-                        const touch1 = event.touches[0];
-                        const touch2 = event.touches[1];
-                        const currentDistance = Math.sqrt(
-                            Math.pow(touch2.clientX - touch1.clientX, 2) +
-                            Math.pow(touch2.clientY - touch1.clientY, 2)
-                        );
-                        
-                        if (this.lastPinchDistance) {
-                            const scale = currentDistance / this.lastPinchDistance;
-                            this.cameraDistance /= scale;
-                            this.cameraDistance = Math.max(3, Math.min(300, this.cameraDistance));
-                        }
-                        this.lastPinchDistance = currentDistance;
-                    } else {
-                        // Single touch - rotate camera
-                        const sensitivity = 0.008;
-                        this.cameraTheta = this.initialCameraTheta + deltaX * sensitivity;
-                        this.cameraPhi = Math.max(0.1, Math.min(Math.PI - 0.1, 
-                            this.initialCameraPhi + deltaY * sensitivity));
-                    }
-                }
-            }
-
-            onTouchEnd(event) {
-                event.preventDefault();
-                
-                clearTimeout(this.longPressTimeout);
-                this.lastPinchDistance = null;
-                
-                const touch = event.changedTouches[0];
-                const deltaX = touch.clientX - this.touchStartX;
-                const deltaY = touch.clientY - this.touchStartY;
-                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-                const duration = Date.now() - this.touchStartTime;
-                
-                // Determine gesture type
-                if (!this.isLongPress && !this.isSwipe && duration < 300 && distance < 20) {
-                    // Simple tap
-                    this.checkCellClick(event);
-                } else if (this.isSwipe && distance > this.swipeThreshold && duration < 500) {
-                    // Swipe gesture
-                    this.handleSwipe(deltaX, deltaY);
-                }
-            }
-
-            handleSwipe(deltaX, deltaY) {
-                const absX = Math.abs(deltaX);
-                const absY = Math.abs(deltaY);
-                
-                if (absX > absY) {
-                    // Horizontal swipe
-                    if (deltaX > 0) {
-                        // Swipe right - toggle flag mode
-                        this.toggleFlagMode();
-                    } else {
-                        // Swipe left - reset camera
-                        this.resetCamera();
-                    }
-                } else {
-                    // Vertical swipe
-                    if (deltaY > 0) {
-                        // Swipe down - pause game
-                        this.togglePause();
-                    } else {
-                        // Swipe up - switch view
-                        this.switchView();
-                    }
-                }
-                
-                // Provide visual feedback
-                if (navigator.vibrate) navigator.vibrate(30);
-            }
-
-            onMouseDown(event) {
-                event.preventDefault();
-                
-                if (event.button === 0) { // Left click
-                    this.isMouseDown = true;
-                    this.mouseX = event.clientX;
-                    this.mouseY = event.clientY;
-                    this.checkCellClick(event);
-                } else if (event.button === 1) { // Middle click
-                    event.preventDefault();
-                    this.checkCellClick(event, false, true);
-                } else if (event.button === 2) { // Right click
-                    this.checkCellClick(event, true);
-                }
-            }
-
-            onMouseMove(event) {
-                if (this.isMouseDown && !this.isPaused) {
-                    const deltaX = event.clientX - this.mouseX;
-                    const deltaY = event.clientY - this.mouseY;
-                    
-                    const sensitivity = this.keys.shift ? 0.003 : 0.01;
-                    
-                    this.cameraTheta += deltaX * sensitivity;
-                    this.cameraPhi = Math.max(0.1, Math.min(Math.PI - 0.1, this.cameraPhi + deltaY * sensitivity));
-                    
-                    this.mouseX = event.clientX;
-                    this.mouseY = event.clientY;
-                }
-                
-                this.updateHover(event);
-            }
-
-            onMouseUp(event) {
-                this.isMouseDown = false;
-            }
-
-            onMouseWheel(event) {
-                event.preventDefault();
-                if (this.isPaused) return;
-                
-                const zoomSpeed = this.keys.shift ? 0.5 : 2.0;
-                this.cameraDistance *= (1 + event.deltaY * 0.001 * zoomSpeed);
-                this.cameraDistance = Math.max(3, Math.min(300, this.cameraDistance));
-            }
-
-            checkCellClick(event, isRightClick = false, isMiddleClick = false) {
-                // Get touch or mouse position
-                let clientX, clientY;
-                if (event.touches) {
-                    const touch = event.touches[0] || event.changedTouches[0];
-                    clientX = touch.clientX;
-                    clientY = touch.clientY;
-                } else {
-                    clientX = event.clientX;
-                    clientY = event.clientY;
-                }
-                
-                this.mouse.x = (clientX / window.innerWidth) * 2 - 1;
-                this.mouse.y = -(clientY / window.innerHeight) * 2 + 1;
-                
-                this.raycaster.setFromCamera(this.mouse, this.camera);
-                
-                const intersects = this.raycaster.intersectObjects(this.scene.children.filter(obj => obj.userData.isCell));
-                
-                if (intersects.length > 0) {
-                    const mesh = intersects[0].object;
-                    const { x, y, z } = mesh.userData;
-                    
-                    if (isRightClick) {
-                        this.toggleFlag(x, y, z);
-                    } else {
-                        this.handleCellClick(x, y, z, isMiddleClick);
-                    }
-                    
-                    document.getElementById('coordinates').textContent = `Position: ${x}, ${y}, ${z}`;
-                }
-            }
-
-            updateHover(event) {
-                if (this.isPaused || this.isTouchDevice) return;
-                
-                this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-                this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-                
-                this.raycaster.setFromCamera(this.mouse, this.camera);
-                
-                const intersects = this.raycaster.intersectObjects(this.scene.children.filter(obj => obj.userData.isCell));
-                
-                // Reset previous hover
-                if (this.hoveredCell && this.hoveredCell !== (intersects.length > 0 ? intersects[0].object : null)) {
-                    this.resetCellMaterial(this.hoveredCell);
-                }
-                
-                // Set new hover
-                if (intersects.length > 0 && !intersects[0].object.userData.cell.isRevealed) {
-                    this.hoveredCell = intersects[0].object;
-                    this.hoveredCell.material = this.wireframe ? 
-                        Object.assign(this.materials.hover.clone(), { wireframe: true }) : 
-                        this.materials.hover;
-                    
-                    const { x, y, z } = this.hoveredCell.userData;
-                    document.getElementById('coordinates').textContent = `Position: ${x}, ${y}, ${z}`;
-                    
-                    // Show adjacent mine count for revealed cells
-                    const cell = this.grid[x][y][z];
-                    if (cell.isRevealed && cell.adjacentMines > 0) {
-                        // Could add tooltip or info display here
-                    }
-                } else {
-                    this.hoveredCell = null;
-                }
-            }
-
-            resetCellMaterial(mesh) {
-                const cell = mesh.userData.cell;
-                let material = this.materials.hidden;
-                
-                if (cell.isFlagged) {
-                    material = this.materials.flagged;
-                } else if (cell.isRevealed) {
-                    if (cell.isMine) {
-                        material = this.materials.mine;
-                    } else if (cell.adjacentMines > 0) {
-                        material = this.numberMaterials[cell.adjacentMines];
-                    } else {
-                        material = this.materials.revealed;
-                    }
-                }
-                
-                mesh.material = this.wireframe ? 
-                    Object.assign(material.clone(), { wireframe: true }) : 
-                    material;
-            }
-
-            onKeyDown(event) {
-                switch (event.key.toLowerCase()) {
-                    case 'w': this.keys.w = true; break;
-                    case 'a': this.keys.a = true; break;
-                    case 's': this.keys.s = true; break;
-                    case 'd': this.keys.d = true; break;
-                    case 'shift': this.keys.shift = true; break;
-                    case 'control': this.keys.ctrl = true; break;
-                    case ' ':
-                        event.preventDefault();
-                        this.toggleFlagMode();
-                        break;
-                    case 'p':
-                        event.preventDefault();
-                        this.togglePause();
-                        break;
-                    case 'r':
-                        if (this.keys.ctrl) {
-                            event.preventDefault();
-                            this.initializeGame();
-                        }
-                        break;
-                    case 'f':
-                        if (this.keys.ctrl) {
-                            event.preventDefault();
-                            this.toggleFullscreen();
-                        }
-                        break;
-                    case 'g':
-                        this.toggleGrid();
-                        break;
-                    case 'h':
-                        this.toggleInstructions();
-                        break;
-                }
-            }
-
-            onKeyUp(event) {
-                switch (event.key.toLowerCase()) {
-                    case 'w': this.keys.w = false; break;
-                    case 'a': this.keys.a = false; break;
-                    case 's': this.keys.s = false; break;
-                    case 'd': this.keys.d = false; break;
-                    case 'shift': this.keys.shift = false; break;
-                    case 'control': this.keys.ctrl = false; break;
-                }
-            }
-
-            onWindowResize() {
-                this.camera.aspect = window.innerWidth / window.innerHeight;
-                this.camera.updateProjectionMatrix();
-                this.renderer.setSize(window.innerWidth, window.innerHeight);
-            }
-
-            updateCamera() {
-                if (this.isPaused && !this.autoRotate) return;
-                
-                // Enhanced WASD movement
-                const moveSpeed = this.keys.shift ? 1.0 : 0.5;
-                const rotateSpeed = this.keys.shift ? 0.01 : 0.02;
-                
-                if (this.keys.w) this.cameraDistance = Math.max(3, this.cameraDistance - moveSpeed);
-                if (this.keys.s) this.cameraDistance = Math.min(300, this.cameraDistance + moveSpeed);
-                if (this.keys.a) this.cameraTheta -= rotateSpeed;
-                if (this.keys.d) this.cameraTheta += rotateSpeed;
-                
-                // Auto rotate
-                if (this.autoRotate) {
-                    this.cameraTheta += 0.005;
-                }
-                
-                // Smooth camera movement
-                const targetX = this.cameraDistance * Math.sin(this.cameraPhi) * Math.cos(this.cameraTheta);
-                const targetY = this.cameraDistance * Math.cos(this.cameraPhi);
-                const targetZ = this.cameraDistance * Math.sin(this.cameraPhi) * Math.sin(this.cameraTheta);
-                
-                this.camera.position.x = THREE.MathUtils.lerp(this.camera.position.x, targetX, 0.1);
-                this.camera.position.y = THREE.MathUtils.lerp(this.camera.position.y, targetY, 0.1);
-                this.camera.position.z = THREE.MathUtils.lerp(this.camera.position.z, targetZ, 0.1);
-                
-                this.camera.lookAt(this.cameraTarget);
-            }
-
-            updatePerformance() {
-                this.frameCount++;
-                const now = performance.now();
-                
-                if (now - this.lastTime >= 1000) {
-                    this.fps = Math.round((this.frameCount * 1000) / (now - this.lastTime));
-                    this.frameCount = 0;
-                    this.lastTime = now;
-                    
-                    const totalCells = this.sizeX * this.sizeY * this.sizeZ;
-                    document.getElementById('performanceInfo').innerHTML = `
-                        FPS: ${this.fps}<br>
-                        Cells: ${totalCells}<br>
-                        Renderer: WebGL
-                    `;
-                }
-            }
-
-            animate() {
-                requestAnimationFrame(() => this.animate());
-                
-                this.updateCamera();
-                this.updatePerformance();
-                this.renderer.render(this.scene, this.camera);
-            }
-
-            // Public methods for UI controls
-            toggleFlagMode() {
-                this.flagMode = !this.flagMode;
-                this.updateUI();
-                
-                // Show visual feedback for touch devices
-                if (this.isTouchDevice && navigator.vibrate) {
-                    navigator.vibrate(this.flagMode ? 100 : 50);
-                }
-            }
-
-            toggleNumbers() {
-                this.showNumbers = !this.showNumbers;
-                if (this.showNumbers) {
-                    this.renderGrid3D(); // Recreate number elements
-                } else {
-                    this.numberContainer.innerHTML = '';
-                    this.numberElements.clear();
-                }
-            }
-
-            togglePause() {
-                this.isPaused = !this.isPaused;
-                this.updateUI();
-            }
-
-            resetCamera() {
-                const config = this.difficulties[this.currentDifficulty];
-                const maxSize = Math.max(config.x, config.y, config.z);
-                
-                this.cameraDistance = maxSize * 1.5 + 20;
-                this.cameraTheta = Math.PI / 4;
-                this.cameraPhi = Math.PI / 3;
-                this.autoRotate = false;
-                this.cameraTarget.set(0, 0, 0);
-            }
-
-            toggleAutoRotate() {
-                this.autoRotate = !this.autoRotate;
-                this.updateUI();
-            }
-
-            switchView() {
-                if (this.currentDifficulty === 'expert') {
-                    // For 2D expert mode, switch between views
-                    if (this.cameraPhi < 0.3) {
-                        this.cameraPhi = Math.PI / 3;
-                        this.cameraDistance = 60;
-                    } else {
-                        this.cameraPhi = 0.1;
-                        this.cameraDistance = 35;
-                    }
-                } else {
-                    // For 3D modes, cycle through preset views
-                    const views = [
-                        { phi: Math.PI / 4, theta: 0, distance: 50 },
-                        { phi: Math.PI / 2, theta: 0, distance: 40 },
-                        { phi: Math.PI / 6, theta: Math.PI / 4, distance: 60 }
-                    ];
-                    
-                    // Find closest view and switch to next
-                    let closestIndex = 0;
-                    let closestDistance = Infinity;
-                    
-                    views.forEach((view, index) => {
-                        const dist = Math.abs(view.phi - this.cameraPhi) + Math.abs(view.theta - this.cameraTheta);
-                        if (dist < closestDistance) {
-                            closestDistance = dist;
-                            closestIndex = index;
-                        }
-                    });
-                    
-                    const nextView = views[(closestIndex + 1) % views.length];
-                    this.cameraPhi = nextView.phi;
-                    this.cameraTheta = nextView.theta;
-                    this.cameraDistance = nextView.distance;
-                }
-            }
-
-            toggleWireframe() {
-                this.wireframe = !this.wireframe;
-                this.renderGrid3D();
-                this.updateUI();
-            }
-
-            toggleGrid() {
-                this.showGrid = !this.showGrid;
-                this.createGridHelper();
-            }
-
-            toggleShadows() {
-                this.enableShadows = !this.enableShadows;
-                this.renderer.shadowMap.enabled = this.enableShadows;
-                this.setupLighting();
-                this.renderGrid3D();
-            }
-
-            updateGraphics() {
-                this.setupLighting();
-                this.setupMaterials();
-                if (this.effectsLevel >= 1) {
-                    this.scene.fog = new THREE.Fog(0x0f0f23, 10, 100);
-                } else {
-                    this.scene.fog = null;
-                }
-                this.renderer.antialias = this.effectsLevel >= 2;
-                this.renderGrid3D();
-            }
-
-            toggleInstructions() {
-                const instructions = document.querySelector('.instructions');
-                instructions.style.opacity = instructions.style.opacity === '0' ? '1' : '0';
-            }
-        }
-
-        // Global functions
-        let game = new Minesweeper3D();
-
-        function resetGame() {
-            game.initializeGame();
-        }
-
-        function toggleFlagMode() {
-            game.toggleFlagMode();
-        }
-
-        function togglePause() {
-            game.togglePause();
-        }
-
-        function hideGameOver() {
-            document.getElementById('gameOverOverlay').style.display = 'none';
-        }
-
-        function toggleFullscreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => {
-                    console.log('Fullscreen not supported');
-                });
-            } else {
-                document.exitFullscreen();
-            }
-        }
-
-        function resetCamera() {
-            game.resetCamera();
-        }
-
-        function toggleAutoRotate() {
-            game.toggleAutoRotate();
-        }
-
-        function switchView() {
-            game.switchView();
-        }
-
-        function toggleWireframe() {
-            game.toggleWireframe();
-        }
-
-        function toggleGrid() {
-            game.toggleGrid();
-            document.getElementById('gridToggle').checked = game.showGrid;
-        }
-
-        function toggleShadows() {
-            game.toggleShadows();
-            document.getElementById('shadowToggle').checked = game.enableShadows;
-        }
-
-        function updateGraphics() {
-            const level = parseInt(document.getElementById('effectsSlider').value);
-            game.effectsLevel = level;
-            game.updateGraphics();
-        }
-
-        // Initialize settings based on game state
-        window.addEventListener('load', () => {
-            document.getElementById('effectsSlider').value = game.effectsLevel;
-            document.getElementById('gridToggle').checked = game.showGrid;
-            document.getElementById('shadowToggle').checked = game.enableShadows;
-        });
-
-        // Add some helpful keyboard shortcuts info
-        console.log(`
-🎮 3D Minesweeper Pro - Keyboard Shortcuts:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎯 Game Controls:
-   Space     - Toggle flag mode
-   P         - Pause/Resume game
-   R         - Restart game
-   Ctrl+R    - Quick restart
-   Ctrl+F    - Toggle fullscreen
-
-📷 Camera Controls:
-   WASD      - Move camera
-   Shift+Key - Fast movement/rotation
-   Mouse     - Rotate view
-   Scroll    - Zoom in/out
-
-🎨 Display Options:
-   G         - Toggle grid helper
-   H         - Toggle instructions
-
-🖱️  Mouse Controls:
-   Left Click    - Reveal cell
-   Right Click   - Flag cell  
-   Middle Click  - Auto-reveal adjacent (when numbers match flags)
-   Shift+Mouse   - Precision camera control
-
-Happy mining! 💣
-        `);
-    </script>
-</body>
-</html>
