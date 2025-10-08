@@ -280,17 +280,17 @@
 
             <div class="hud-section">
                 <div class="menu-section">
-                    <button class="btn-primary" onclick="resetGame()">🔄 New Game</button>
-                    <button class="btn-warning" id="flagModeBtn" onclick="toggleFlagMode()">🚩 Flag Mode</button>
+                    <button class="btn-primary" onclick="game.resetGame()">🔄 New Game</button>
+                    <button class="btn-warning" id="flagModeBtn" onclick="game.toggleFlagMode()">🚩 Flag Mode</button>
                     
                     <div class="dropdown">
                         <button class="btn-secondary">⚙️ Settings</button>
                         <div class="dropdown-content">
-                            <button onclick="toggleGrid()">📏 Toggle Grid</button>
-                            <button onclick="toggleAutoRotate()">🔄 Auto Rotate</button>
-                            <button onclick="resetCamera()">📷 Reset Camera</button>
-                            <button onclick="switchView()">👁️ Switch View</button>
-                            <button onclick="toggleFullscreen()">⛶ Fullscreen</button>
+                            <button onclick="game.toggleGrid()">📏 Toggle Grid</button>
+                            <button onclick="game.toggleAutoRotate()">🔄 Auto Rotate</button>
+                            <button onclick="game.resetCamera()">📷 Reset Camera</button>
+                            <button onclick="game.switchView()">👁️ Switch View</button>
+                            <button onclick="game.toggleFullscreen()">⛶ Fullscreen</button>
                         </div>
                     </div>
                 </div>
@@ -324,8 +324,8 @@
             <div class="game-over-message" id="gameOverMessage">Congratulations!</div>
             <div class="game-over-stats" id="gameOverStats"></div>
             <div class="controls">
-                <button class="btn-primary" onclick="resetGame(); hideGameOver()">New Game</button>
-                <button class="btn-secondary" onclick="hideGameOver()">Continue</button>
+                <button class="btn-primary" onclick="game.resetGame(); game.hideGameOver()">New Game</button>
+                <button class="btn-secondary" onclick="game.hideGameOver()">Continue</button>
             </div>
         </div>
     </div>
@@ -350,6 +350,7 @@
                 this.mineCount = 0;
                 this.autoRotate = false;
                 this.showGrid = true;
+                this.isOrthographic = false;
                 
                 // Touch controls
                 this.isTouchDevice = 'ontouchstart' in window;
@@ -756,3 +757,332 @@
             toggleFlag(x, y, z) {
                 const cell = this.grid[x][y][z];
                 if (cell.isRevealed) return;
+                
+                cell.isFlagged = !cell.isFlagged;
+                if (cell.isFlagged) {
+                    this.mineCount--;
+                } else {
+                    this.mineCount++;
+                }
+                
+                this.renderGrid3D();
+                this.updateUI();
+            }
+
+            checkWinCondition() {
+                let unrevealedSafeCells = 0;
+                
+                for (let x = 0; x < this.sizeX; x++) {
+                    for (let y = 0; y < this.sizeY; y++) {
+                        for (let z = 0; z < this.sizeZ; z++) {
+                            const cell = this.grid[x][y][z];
+                            if (!cell.isRevealed && !cell.isMine) {
+                                unrevealedSafeCells++;
+                            }
+                        }
+                    }
+                }
+                
+                if (unrevealedSafeCells === 0) {
+                    this.gameState = 'won';
+                    this.endGame();
+                }
+            }
+
+            revealAllMines() {
+                for (let x = 0; x < this.sizeX; x++) {
+                    for (let y = 0; y < this.sizeY; y++) {
+                        for (let z = 0; z < this.sizeZ; z++) {
+                            const cell = this.grid[x][y][z];
+                            if (cell.isMine && !cell.isFlagged) {
+                                cell.isRevealed = true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            startTimer() {
+                this.timer = 0;
+                this.timerInterval = setInterval(() => {
+                    this.timer++;
+                    document.getElementById('timer').textContent = this.timer;
+                }, 1000);
+            }
+
+            endGame() {
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = null;
+                }
+                
+                if (this.gameState === 'won') {
+                    this.showGameOver('🎉 You Win!', 'Congratulations! You found all the mines!');
+                } else if (this.gameState === 'lost') {
+                    this.showGameOver('💥 Game Over', 'You hit a mine! Try again.');
+                }
+                
+                this.updateUI();
+            }
+
+            showGameOver(title, message) {
+                document.getElementById('gameOverTitle').textContent = title;
+                document.getElementById('gameOverMessage').textContent = message;
+                document.getElementById('gameOverStats').innerHTML = `
+                    <p>Time: ${this.timer} seconds</p>
+                    <p>Difficulty: ${this.currentDifficulty}</p>
+                `;
+                document.getElementById('gameOverOverlay').style.display = 'flex';
+            }
+
+            hideGameOver() {
+                document.getElementById('gameOverOverlay').style.display = 'none';
+            }
+
+            updateUI() {
+                document.getElementById('mineCount').textContent = this.mineCount;
+                document.getElementById('timer').textContent = this.timer;
+                document.getElementById('gameMode').textContent = this.flagMode ? 'Flag Mode' : 'Reveal Mode';
+                document.getElementById('gameStatus').textContent = this.gameState === 'playing' ? 'Playing' : 
+                    this.gameState === 'won' ? 'Victory!' : 'Game Over';
+                
+                // Calculate progress
+                let revealedCells = 0;
+                let totalSafeCells = 0;
+                
+                for (let x = 0; x < this.sizeX; x++) {
+                    for (let y = 0; y < this.sizeY; y++) {
+                        for (let z = 0; z < this.sizeZ; z++) {
+                            if (!this.grid[x][y][z].isMine) {
+                                totalSafeCells++;
+                                if (this.grid[x][y][z].isRevealed) {
+                                    revealedCells++;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                const progress = totalSafeCells > 0 ? Math.round((revealedCells / totalSafeCells) * 100) : 0;
+                document.getElementById('progress').textContent = `Progress: ${progress}%`;
+                
+                // Update flag mode button
+                const flagModeBtn = document.getElementById('flagModeBtn');
+                if (this.flagMode) {
+                    flagModeBtn.style.background = 'linear-gradient(45deg, #dc3545, #a71e2a)';
+                } else {
+                    flagModeBtn.style.background = 'linear-gradient(45deg, #ffc107, #d39e00)';
+                }
+            }
+
+            toggleFlagMode() {
+                this.flagMode = !this.flagMode;
+                this.updateUI();
+            }
+
+            resetGame() {
+                this.initializeGame();
+                this.hideGameOver();
+            }
+
+            toggleGrid() {
+                this.showGrid = !this.showGrid;
+                this.createGridHelper();
+            }
+
+            toggleAutoRotate() {
+                this.autoRotate = !this.autoRotate;
+            }
+
+            resetCamera() {
+                this.camera.position.set(30, 30, 30);
+                this.camera.lookAt(0, 0, 0);
+            }
+
+            switchView() {
+                this.isOrthographic = !this.isOrthographic;
+                
+                if (this.isOrthographic) {
+                    const config = this.difficulties[this.currentDifficulty];
+                    const aspect = window.innerWidth / window.innerHeight;
+                    const size = Math.max(config.x, config.y, config.z) * 1.2;
+                    
+                    this.camera = new THREE.OrthographicCamera(
+                        -size * aspect / 2, size * aspect / 2,
+                        size / 2, -size / 2,
+                        0.1, 1000
+                    );
+                    this.camera.position.set(0, 0, 50);
+                    this.camera.lookAt(0, 0, 0);
+                } else {
+                    this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    this.resetCamera();
+                }
+                
+                this.renderer.render(this.scene, this.camera);
+            }
+
+            toggleFullscreen() {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen();
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    }
+                }
+            }
+
+            setupEventListeners() {
+                // Mouse events
+                document.getElementById('gameCanvas').addEventListener('mousedown', (e) => {
+                    this.isMouseDown = true;
+                    this.mouseX = e.clientX;
+                    this.mouseY = e.clientY;
+                    
+                    // Handle cell click
+                    this.raycaster.setFromCamera(this.mouse, this.camera);
+                    const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+                    
+                    for (let i = 0; i < intersects.length; i++) {
+                        const object = intersects[i].object;
+                        if (object.userData.isCell) {
+                            const { x, y, z } = object.userData;
+                            const isMiddleClick = e.button === 1;
+                            this.handleCellClick(x, y, z, isMiddleClick);
+                            break;
+                        }
+                    }
+                });
+                
+                document.addEventListener('mouseup', () => {
+                    this.isMouseDown = false;
+                });
+                
+                document.addEventListener('mousemove', (e) => {
+                    // Update mouse position for raycaster
+                    this.mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                    this.mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+                    
+                    // Camera rotation
+                    if (this.isMouseDown) {
+                        const deltaX = e.clientX - this.mouseX;
+                        const deltaY = e.clientY - this.mouseY;
+                        
+                        this.cameraTheta += deltaX * 0.01;
+                        this.cameraPhi += deltaY * 0.01;
+                        this.cameraPhi = Math.max(0.1, Math.min(Math.PI - 0.1, this.cameraPhi));
+                        
+                        this.updateCameraPosition();
+                        
+                        this.mouseX = e.clientX;
+                        this.mouseY = e.clientY;
+                    }
+                    
+                    // Update coordinates display
+                    this.raycaster.setFromCamera(this.mouse, this.camera);
+                    const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+                    
+                    let coordinates = 'Position: None';
+                    for (let i = 0; i < intersects.length; i++) {
+                        const object = intersects[i].object;
+                        if (object.userData.isCell) {
+                            const { x, y, z } = object.userData;
+                            coordinates = `Position: ${x}, ${y}, ${z}`;
+                            break;
+                        }
+                    }
+                    document.getElementById('coordinates').textContent = coordinates;
+                });
+                
+                // Mouse wheel for zoom
+                document.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    this.cameraDistance += e.deltaY * 0.01;
+                    this.cameraDistance = Math.max(10, Math.min(100, this.cameraDistance));
+                    this.updateCameraPosition();
+                });
+                
+                // Keyboard controls
+                document.addEventListener('keydown', (e) => {
+                    if (e.key in this.keys) {
+                        this.keys[e.key] = true;
+                    }
+                    
+                    // Space to toggle flag mode
+                    if (e.code === 'Space') {
+                        e.preventDefault();
+                        this.toggleFlagMode();
+                    }
+                    
+                    // R to reset game
+                    if (e.code === 'KeyR') {
+                        this.resetGame();
+                    }
+                });
+                
+                document.addEventListener('keyup', (e) => {
+                    if (e.key in this.keys) {
+                        this.keys[e.key] = false;
+                    }
+                });
+                
+                // Window resize
+                window.addEventListener('resize', () => {
+                    this.camera.aspect = window.innerWidth / window.innerHeight;
+                    this.camera.updateProjectionMatrix();
+                    this.renderer.setSize(window.innerWidth, window.innerHeight);
+                });
+                
+                // Difficulty buttons
+                document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        this.currentDifficulty = btn.dataset.difficulty;
+                        this.resetGame();
+                    });
+                });
+            }
+
+            updateCameraPosition() {
+                if (!this.isOrthographic) {
+                    this.camera.position.x = this.cameraDistance * Math.sin(this.cameraPhi) * Math.cos(this.cameraTheta);
+                    this.camera.position.y = this.cameraDistance * Math.cos(this.cameraPhi);
+                    this.camera.position.z = this.cameraDistance * Math.sin(this.cameraPhi) * Math.sin(this.cameraTheta);
+                    this.camera.lookAt(0, 0, 0);
+                }
+            }
+
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                
+                // Auto-rotate
+                if (this.autoRotate) {
+                    this.cameraTheta += 0.005;
+                    this.updateCameraPosition();
+                }
+                
+                // Keyboard camera movement
+                if (this.keys.w) this.cameraPhi -= 0.02;
+                if (this.keys.s) this.cameraPhi += 0.02;
+                if (this.keys.a) this.cameraTheta -= 0.02;
+                if (this.keys.d) this.cameraTheta += 0.02;
+                
+                this.cameraPhi = Math.max(0.1, Math.min(Math.PI - 0.1, this.cameraPhi));
+                
+                if (this.keys.w || this.keys.s || this.keys.a || this.keys.d) {
+                    this.updateCameraPosition();
+                }
+                
+                this.renderer.render(this.scene, this.camera);
+            }
+        }
+
+        // Initialize the game when the page loads
+        let game;
+        window.addEventListener('DOMContentLoaded', () => {
+            game = new Minesweeper3D();
+        });
+    </script>
+</body>
+</html>
