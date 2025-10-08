@@ -361,6 +361,12 @@
                 this.longPressTimeout = null;
                 this.isLongPress = false;
                 
+                // Two-finger panning
+                this.twoFingerStart = { x: 0, y: 0 };
+                this.isTwoFingerPan = false;
+                this.cameraTarget = new THREE.Vector3(0, 0, 0);
+                this.cameraPanSpeed = 0.01;
+                
                 this.initThree();
                 this.initializeGame();
                 this.setupEventListeners();
@@ -897,6 +903,7 @@
             resetCamera() {
                 this.camera.position.set(30, 30, 30);
                 this.camera.lookAt(0, 0, 0);
+                this.cameraTarget.set(0, 0, 0);
             }
 
             switchView() {
@@ -929,6 +936,32 @@
                     if (document.exitFullscreen) {
                         document.exitFullscreen();
                     }
+                }
+            }
+
+            // Two-finger panning function
+            handleTwoFingerPan(deltaX, deltaY) {
+                if (this.isOrthographic) {
+                    // For orthographic view, move the camera directly
+                    this.camera.position.x -= deltaX * this.cameraPanSpeed * 5;
+                    this.camera.position.y += deltaY * this.cameraPanSpeed * 5;
+                    this.cameraTarget.x -= deltaX * this.cameraPanSpeed * 5;
+                    this.cameraTarget.y += deltaY * this.cameraPanSpeed * 5;
+                    this.camera.lookAt(this.cameraTarget);
+                } else {
+                    // For perspective view, calculate pan direction based on camera orientation
+                    const right = new THREE.Vector3();
+                    const up = new THREE.Vector3();
+                    this.camera.getWorldDirection(new THREE.Vector3());
+                    this.camera.matrixWorld.extractBasis(right, up, new THREE.Vector3());
+                    
+                    // Pan the camera and target
+                    this.camera.position.add(right.multiplyScalar(-deltaX * this.cameraPanSpeed));
+                    this.camera.position.add(up.multiplyScalar(-deltaY * this.cameraPanSpeed));
+                    this.cameraTarget.add(right.multiplyScalar(-deltaX * this.cameraPanSpeed));
+                    this.cameraTarget.add(up.multiplyScalar(-deltaY * this.cameraPanSpeed));
+                    
+                    this.camera.lookAt(this.cameraTarget);
                 }
             }
 
@@ -1002,6 +1035,111 @@
                     this.updateCameraPosition();
                 });
                 
+                // Touch events for two-finger panning
+                document.getElementById('gameCanvas').addEventListener('touchstart', (e) => {
+                    if (e.touches.length === 2) {
+                        // Two-finger touch detected - start panning
+                        this.isTwoFingerPan = true;
+                        this.twoFingerStart.x = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                        this.twoFingerStart.y = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                        e.preventDefault();
+                    } else if (e.touches.length === 1) {
+                        // Single touch - prepare for cell interaction
+                        const touch = e.touches[0];
+                        this.mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+                        this.mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+                        
+                        // Check if we're touching a cell
+                        this.raycaster.setFromCamera(this.mouse, this.camera);
+                        const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+                        
+                        for (let i = 0; i < intersects.length; i++) {
+                            const object = intersects[i].object;
+                            if (object.userData.isCell) {
+                                // Set up long press for flagging
+                                this.longPressTimeout = setTimeout(() => {
+                                    this.isLongPress = true;
+                                    const { x, y, z } = object.userData;
+                                    this.toggleFlag(x, y, z);
+                                }, 500);
+                                break;
+                            }
+                        }
+                    }
+                });
+                
+                document.getElementById('gameCanvas').addEventListener('touchmove', (e) => {
+                    if (e.touches.length === 2 && this.isTwoFingerPan) {
+                        // Two-finger panning
+                        const currentX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                        const currentY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                        
+                        const deltaX = currentX - this.twoFingerStart.x;
+                        const deltaY = currentY - this.twoFingerStart.y;
+                        
+                        this.handleTwoFingerPan(deltaX, deltaY);
+                        
+                        this.twoFingerStart.x = currentX;
+                        this.twoFingerStart.y = currentY;
+                        e.preventDefault();
+                    } else if (e.touches.length === 1 && !this.isTwoFingerPan) {
+                        // Single finger move - cancel long press if moving too much
+                        if (this.longPressTimeout) {
+                            clearTimeout(this.longPressTimeout);
+                            this.longPressTimeout = null;
+                        }
+                        
+                        // Update coordinates display
+                        const touch = e.touches[0];
+                        this.mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+                        this.mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+                        
+                        this.raycaster.setFromCamera(this.mouse, this.camera);
+                        const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+                        
+                        let coordinates = 'Position: None';
+                        for (let i = 0; i < intersects.length; i++) {
+                            const object = intersects[i].object;
+                            if (object.userData.isCell) {
+                                const { x, y, z } = object.userData;
+                                coordinates = `Position: ${x}, ${y}, ${z}`;
+                                break;
+                            }
+                        }
+                        document.getElementById('coordinates').textContent = coordinates;
+                    }
+                });
+                
+                document.getElementById('gameCanvas').addEventListener('touchend', (e) => {
+                    if (this.isTwoFingerPan && e.touches.length < 2) {
+                        this.isTwoFingerPan = false;
+                    }
+                    
+                    if (this.longPressTimeout && !this.isLongPress) {
+                        // Single tap - reveal cell
+                        clearTimeout(this.longPressTimeout);
+                        this.longPressTimeout = null;
+                        
+                        const touch = e.changedTouches[0];
+                        this.mouse.x = (touch.clientX / window.innerWidth) * 2 - 1;
+                        this.mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
+                        
+                        this.raycaster.setFromCamera(this.mouse, this.camera);
+                        const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+                        
+                        for (let i = 0; i < intersects.length; i++) {
+                            const object = intersects[i].object;
+                            if (object.userData.isCell) {
+                                const { x, y, z } = object.userData;
+                                this.revealCell(x, y, z);
+                                break;
+                            }
+                        }
+                    }
+                    
+                    this.isLongPress = false;
+                });
+                
                 // Keyboard controls
                 document.addEventListener('keydown', (e) => {
                     if (e.key in this.keys) {
@@ -1049,7 +1187,7 @@
                     this.camera.position.x = this.cameraDistance * Math.sin(this.cameraPhi) * Math.cos(this.cameraTheta);
                     this.camera.position.y = this.cameraDistance * Math.cos(this.cameraPhi);
                     this.camera.position.z = this.cameraDistance * Math.sin(this.cameraPhi) * Math.sin(this.cameraTheta);
-                    this.camera.lookAt(0, 0, 0);
+                    this.camera.lookAt(this.cameraTarget);
                 }
             }
 
