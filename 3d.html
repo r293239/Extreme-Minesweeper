@@ -368,6 +368,9 @@
                 this.cameraPanSpeed = 0.02;
                 this.cameraDistance = 50;
                 
+                // Container for all cubes
+                this.cubeContainer = null;
+                
                 this.initThree();
                 this.initializeGame();
                 this.setupEventListeners();
@@ -379,6 +382,10 @@
                 this.scene = new THREE.Scene();
                 this.scene.background = new THREE.Color(0x0f0f23);
                 this.scene.fog = new THREE.Fog(0x0f0f23, 10, 100);
+                
+                // Create container for all cubes
+                this.cubeContainer = new THREE.Group();
+                this.scene.add(this.cubeContainer);
                 
                 // Camera setup
                 this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -478,6 +485,9 @@
                 this.firstClick = true;
                 this.timer = 0;
                 
+                // Reset cube container position
+                this.cubeContainer.position.set(0, 0, 0);
+                
                 this.createGrid();
                 this.renderGrid3D();
                 this.createGridHelper();
@@ -512,14 +522,10 @@
             }
 
             renderGrid3D() {
-                // Clear existing meshes
-                const cellsToRemove = [];
-                this.scene.traverse((child) => {
-                    if (child.userData.isCell || child.userData.isNumber) {
-                        cellsToRemove.push(child);
-                    }
-                });
-                cellsToRemove.forEach(cell => this.scene.remove(cell));
+                // Clear existing meshes from cube container
+                while (this.cubeContainer.children.length > 0) {
+                    this.cubeContainer.remove(this.cubeContainer.children[0]);
+                }
                 
                 const geometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
                 const spacing = 1;
@@ -552,7 +558,7 @@
                             mesh.castShadow = true;
                             mesh.receiveShadow = true;
                             
-                            this.scene.add(mesh);
+                            this.cubeContainer.add(mesh);
                             cell.mesh = mesh;
                             
                             // Add engraved number for revealed cells
@@ -597,7 +603,7 @@
                 numberMesh.position.z += 0.41;
                 numberMesh.userData = { isNumber: true, parentCell: { x, y, z } };
                 
-                this.scene.add(numberMesh);
+                this.cubeContainer.add(numberMesh);
             }
 
             placeMines(excludeX, excludeY, excludeZ) {
@@ -907,6 +913,7 @@
                 this.cameraDistance = 50;
                 this.cameraTheta = 0;
                 this.cameraPhi = Math.PI / 4;
+                this.cubeContainer.position.set(0, 0, 0);
             }
 
             switchView() {
@@ -942,31 +949,11 @@
                 }
             }
 
-            // Two-finger panning function - FIXED VERSION
+            // Two-finger panning function - WORKING VERSION
             handleTwoFingerPan(deltaX, deltaY) {
-                if (this.isOrthographic) {
-                    // For orthographic view, move the camera directly
-                    this.camera.position.x -= deltaX * this.cameraPanSpeed * 5;
-                    this.camera.position.y += deltaY * this.cameraPanSpeed * 5;
-                    this.camera.lookAt(this.camera.position.x, this.camera.position.y, 0);
-                } else {
-                    // For perspective view - move the entire scene instead of camera
-                    // This creates the panning effect by moving the world relative to camera
-                    const panVector = new THREE.Vector3();
-                    
-                    // Get camera's right and up vectors
-                    const right = new THREE.Vector3();
-                    const up = new THREE.Vector3();
-                    this.camera.getWorldDirection(new THREE.Vector3());
-                    this.camera.matrixWorld.extractBasis(right, up, new THREE.Vector3());
-                    
-                    // Calculate pan direction
-                    panVector.add(right.multiplyScalar(-deltaX * this.cameraPanSpeed));
-                    panVector.add(up.multiplyScalar(deltaY * this.cameraPanSpeed));
-                    
-                    // Move the entire scene (all objects)
-                    this.scene.position.add(panVector);
-                }
+                // Move the cube container instead of individual cubes
+                this.cubeContainer.position.x -= deltaX * this.cameraPanSpeed;
+                this.cubeContainer.position.y += deltaY * this.cameraPanSpeed;
             }
 
             setupEventListeners() {
@@ -978,7 +965,7 @@
                     
                     // Handle cell click
                     this.raycaster.setFromCamera(this.mouse, this.camera);
-                    const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+                    const intersects = this.raycaster.intersectObjects(this.cubeContainer.children, true);
                     
                     for (let i = 0; i < intersects.length; i++) {
                         const object = intersects[i].object;
@@ -1017,7 +1004,7 @@
                     
                     // Update coordinates display
                     this.raycaster.setFromCamera(this.mouse, this.camera);
-                    const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+                    const intersects = this.raycaster.intersectObjects(this.cubeContainer.children, true);
                     
                     let coordinates = 'Position: None';
                     for (let i = 0; i < intersects.length; i++) {
@@ -1055,7 +1042,7 @@
                         
                         // Check if we're touching a cell
                         this.raycaster.setFromCamera(this.mouse, this.camera);
-                        const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+                        const intersects = this.raycaster.intersectObjects(this.cubeContainer.children, true);
                         
                         for (let i = 0; i < intersects.length; i++) {
                             const object = intersects[i].object;
@@ -1099,7 +1086,7 @@
                         this.mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
                         
                         this.raycaster.setFromCamera(this.mouse, this.camera);
-                        const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+                        const intersects = this.raycaster.intersectObjects(this.cubeContainer.children, true);
                         
                         let coordinates = 'Position: None';
                         for (let i = 0; i < intersects.length; i++) {
@@ -1129,7 +1116,7 @@
                         this.mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
                         
                         this.raycaster.setFromCamera(this.mouse, this.camera);
-                        const intersects = this.raycaster.intersectObjects(this.scene.children, true);
+                        const intersects = this.raycaster.intersectObjects(this.cubeContainer.children, true);
                         
                         for (let i = 0; i < intersects.length; i++) {
                             const object = intersects[i].object;
