@@ -365,7 +365,8 @@
                 this.twoFingerStart = { x: 0, y: 0 };
                 this.isTwoFingerPan = false;
                 this.cameraTarget = new THREE.Vector3(0, 0, 0);
-                this.cameraPanSpeed = 0.01;
+                this.cameraPanSpeed = 0.02;
+                this.cameraDistance = 50;
                 
                 this.initThree();
                 this.initializeGame();
@@ -446,7 +447,6 @@
                 this.isMouseDown = false;
                 this.mouseX = 0;
                 this.mouseY = 0;
-                this.cameraDistance = 50;
                 this.cameraTheta = 0;
                 this.cameraPhi = Math.PI / 4;
                 
@@ -904,6 +904,9 @@
                 this.camera.position.set(30, 30, 30);
                 this.camera.lookAt(0, 0, 0);
                 this.cameraTarget.set(0, 0, 0);
+                this.cameraDistance = 50;
+                this.cameraTheta = 0;
+                this.cameraPhi = Math.PI / 4;
             }
 
             switchView() {
@@ -939,29 +942,30 @@
                 }
             }
 
-            // Two-finger panning function
+            // Two-finger panning function - FIXED VERSION
             handleTwoFingerPan(deltaX, deltaY) {
                 if (this.isOrthographic) {
                     // For orthographic view, move the camera directly
                     this.camera.position.x -= deltaX * this.cameraPanSpeed * 5;
                     this.camera.position.y += deltaY * this.cameraPanSpeed * 5;
-                    this.cameraTarget.x -= deltaX * this.cameraPanSpeed * 5;
-                    this.cameraTarget.y += deltaY * this.cameraPanSpeed * 5;
-                    this.camera.lookAt(this.cameraTarget);
+                    this.camera.lookAt(this.camera.position.x, this.camera.position.y, 0);
                 } else {
-                    // For perspective view, calculate pan direction based on camera orientation
+                    // For perspective view - move the entire scene instead of camera
+                    // This creates the panning effect by moving the world relative to camera
+                    const panVector = new THREE.Vector3();
+                    
+                    // Get camera's right and up vectors
                     const right = new THREE.Vector3();
                     const up = new THREE.Vector3();
                     this.camera.getWorldDirection(new THREE.Vector3());
                     this.camera.matrixWorld.extractBasis(right, up, new THREE.Vector3());
                     
-                    // Pan the camera and target
-                    this.camera.position.add(right.multiplyScalar(-deltaX * this.cameraPanSpeed));
-                    this.camera.position.add(up.multiplyScalar(-deltaY * this.cameraPanSpeed));
-                    this.cameraTarget.add(right.multiplyScalar(-deltaX * this.cameraPanSpeed));
-                    this.cameraTarget.add(up.multiplyScalar(-deltaY * this.cameraPanSpeed));
+                    // Calculate pan direction
+                    panVector.add(right.multiplyScalar(-deltaX * this.cameraPanSpeed));
+                    panVector.add(up.multiplyScalar(deltaY * this.cameraPanSpeed));
                     
-                    this.camera.lookAt(this.cameraTarget);
+                    // Move the entire scene (all objects)
+                    this.scene.position.add(panVector);
                 }
             }
 
